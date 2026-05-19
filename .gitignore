@@ -5,6 +5,7 @@ node_modules/
 
 # env files — NEVER commit
 contracts/.env
+contracts/.env.local
 frontend/.env
 frontend/.env.local
 frontend/.env.production
