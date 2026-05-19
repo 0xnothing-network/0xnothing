@@ -268,17 +268,31 @@ export default function LandingPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {PRODUCTS.map((p) => {
-                  const Card = p.disabled ? "div" : Link;
-                  const cardProps = p.disabled
-                    ? { className: "group relative bg-white/5 border border-white/10 rounded-2xl p-6 opacity-50 cursor-not-allowed overflow-hidden" }
-                    : { href: p.href, onClick: () => setExploreOpen(false), className: "group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden" };
+                  if (p.disabled) {
+                    return (
+                      <div key={p.id} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 opacity-50 cursor-not-allowed overflow-hidden">
+                        <div className="relative">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white" style={{ background: p.color }}>
+                              {p.name.slice(0, 2)}
+                            </div>
+                            <div>
+                              <h3 className="text-white font-semibold text-base">{p.name}</h3>
+                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${p.color}20`, color: p.color }}>
+                                {p.tag}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-[#64748B] text-sm">{p.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
-                    <Card key={p.id} {...cardProps}>
-                      {!p.disabled && (
-                        <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
-                          background: `radial-gradient(ellipse at 30% 50%, ${p.glow} 0%, transparent 70%)`,
-                        }} />
-                      )}
+                    <Link key={p.id} href={p.href} onClick={() => setExploreOpen(false)} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden">
+                      <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+                        background: `radial-gradient(ellipse at 30% 50%, ${p.glow} 0%, transparent 70%)`,
+                      }} />
                       <div className="relative">
                         <div className="flex items-center gap-3 mb-3">
                           {p.id === "0xPixel" ? (
@@ -297,7 +311,7 @@ export default function LandingPage() {
                         </div>
                         <p className="text-[#64748B] text-sm">{p.desc}</p>
                       </div>
-                    </Card>
+                    </Link>
                   );
                 })}
               </div>
