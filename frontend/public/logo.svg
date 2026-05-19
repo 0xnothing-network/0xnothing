@@ -1,0 +1,241 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="400" height="120">
+  <defs>
+    <linearGradient id="grad0x" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366F1"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="gradPixel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#818CF8"/>
+      <stop offset="100%" style="stop-color:#A78BFA"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background glow -->
+  <ellipse cx="90" cy="70" rx="80" ry="30" fill="#6366F1" opacity="0.08"/>
+
+  <!-- "0x"  pixelated blocky style, 8x8 pixel grid per character, scaled up -->
+  <!-- 0 -->
+  <rect x="0"   y="0"   width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="10"  y="0"   width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="0"   width="10" height="4"  fill="#818CF8"/>
+  <rect x="10"  y="0"   width="10" height="4"  fill="#818CF8"/>
+  <rect x="0"   y="0"   width="4"  height="10" fill="#818CF8"/>
+  <rect x="16"  y="0"   width="4"  height="10" fill="#4338CA"/>
+  <rect x="0"   y="6"   width="4"  height="4"  fill="#4338CA"/>
+  <rect x="16"  y="6"   width="4"  height="4"  fill="#4338CA"/>
+  <rect x="0"   y="10"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="10"  y="10"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="16"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="16"  y="16"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="0"   y="20"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="10"  y="20"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="26"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="16"  y="26"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="0"   y="30"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="10"  y="30"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="36"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="16"  y="36"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="0"   y="40"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="10"  y="40"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="46"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="16"  y="46"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="0"   y="50"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="10"  y="50"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="56"  width="10" height="4"  fill="#4338CA"/>
+  <rect x="10"  y="56"  width="10" height="4"  fill="#4338CA"/>
+  <rect x="0"   y="56"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="16"  y="56"  width="4"  height="4"  fill="#4338CA"/>
+
+  <!-- x  pixelated -->
+  <rect x="40"  y="0"   width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="50"  y="0"   width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="0"   y="0"   width="10" height="4"  fill="#818CF8"/>
+  <rect x="10"  y="0"   width="10" height="4"  fill="#818CF8"/>
+  <rect x="40"  y="0"   width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="0"   width="4"  height="4"  fill="#4338CA"/>
+  <rect x="40"  y="10"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="50"  y="10"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="40"  y="6"   width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="6"   width="4"  height="4"  fill="#4338CA"/>
+  <rect x="40"  y="20"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="50"  y="20"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="40"  y="16"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="16"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="40"  y="30"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="50"  y="30"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="40"  y="26"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="26"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="40"  y="40"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="50"  y="40"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="40"  y="36"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="36"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="40"  y="50"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="50"  y="50"  width="10" height="10" fill="url(#grad0x)"/>
+  <rect x="40"  y="46"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="46"  width="4"  height="4"  fill="#4338CA"/>
+  <rect x="40"  y="56"  width="4"  height="4"  fill="#818CF8"/>
+  <rect x="56"  y="56"  width="4"  height="4"  fill="#4338CA"/>
+
+  <!-- P  pixelated (7 wide block) -->
+  <rect x="80"  y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="80"  y="0"   width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="80"  y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="80"  y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="80"  y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="80"  y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="80"  y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="80"  y="56"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="90"  y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="100" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="90"  y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="100" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="90"  y="6"   width="10" height="4"  fill="#6366F1"/>
+  <rect x="100" y="6"   width="10" height="4"  fill="#6366F1"/>
+  <rect x="90"  y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="100" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="90"  y="16"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="100" y="16"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="90"  y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="100" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="90"  y="26"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="100" y="26"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="90"  y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="100" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="90"  y="36"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="100" y="36"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="90"  y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="100" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="90"  y="46"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="100" y="46"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="90"  y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="100" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="90"  y="56"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="100" y="56"  width="4"  height="4"  fill="#6366F1"/>
+
+  <!-- I -->
+  <rect x="120" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="130" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="120" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="130" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="124" y="4"   width="2"  height="2"  fill="#6366F1"/>
+  <rect x="134" y="4"   width="2"  height="2"  fill="#6366F1"/>
+  <rect x="124" y="6"   width="2"  height="4"  fill="#6366F1"/>
+  <rect x="134" y="6"   width="2"  height="4"  fill="#6366F1"/>
+  <rect x="124" y="10"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="134" y="10"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="124" y="16"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="134" y="16"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="124" y="20"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="134" y="20"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="124" y="26"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="134" y="26"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="124" y="30"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="134" y="30"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="124" y="36"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="134" y="36"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="124" y="40"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="134" y="40"  width="2"  height="6"  fill="#6366F1"/>
+  <rect x="124" y="46"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="134" y="46"  width="2"  height="4"  fill="#6366F1"/>
+  <rect x="120" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="130" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="120" y="56"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="130" y="56"  width="10" height="4"  fill="#6366F1"/>
+
+  <!-- X -->
+  <rect x="150" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="160" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="150" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="160" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="150" y="6"   width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="166" y="6"   width="4"  height="4"  fill="#6366F1"/>
+  <rect x="150" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="160" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="154" y="10"  width="2"  height="2"  fill="#A78BFA"/>
+  <rect x="164" y="10"  width="2"  height="2"  fill="#6366F1"/>
+  <rect x="150" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="160" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="154" y="20"  width="2"  height="2"  fill="#A78BFA"/>
+  <rect x="164" y="20"  width="2"  height="2"  fill="#6366F1"/>
+  <rect x="150" y="26"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="166" y="26"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="150" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="160" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="150" y="36"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="166" y="36"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="150" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="160" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="150" y="46"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="166" y="46"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="150" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="160" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="150" y="56"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="160" y="56"  width="10" height="4"  fill="#6366F1"/>
+
+  <!-- E -->
+  <rect x="180" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="190" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="200" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="180" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="190" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="200" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="180" y="6"   width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="210" y="6"   width="4"  height="4"  fill="#6366F1"/>
+  <rect x="180" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="190" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="200" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="180" y="16"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="184" y="16"  width="6"  height="4"  fill="#6366F1"/>
+  <rect x="210" y="16"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="180" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="190" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="200" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="180" y="26"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="184" y="26"  width="16" height="4"  fill="#6366F1"/>
+  <rect x="210" y="26"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="180" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="190" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="200" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="180" y="36"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="184" y="36"  width="6"  height="4"  fill="#6366F1"/>
+  <rect x="210" y="36"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="180" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="190" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="200" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="180" y="46"  width="4"  height="4"  fill="#A78BFA"/>
+  <rect x="184" y="46"  width="6"  height="4"  fill="#6366F1"/>
+  <rect x="210" y="46"  width="4"  height="4"  fill="#6366F1"/>
+  <rect x="180" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="190" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="200" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="180" y="56"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="190" y="56"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="200" y="56"  width="10" height="4"  fill="#6366F1"/>
+
+  <!-- L -->
+  <rect x="220" y="0"   width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="220" y="0"   width="10" height="4"  fill="#C4B5FD"/>
+  <rect x="224" y="4"   width="2"  height="6"  fill="#6366F1"/>
+  <rect x="220" y="10"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="220" y="20"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="220" y="30"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="220" y="40"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="220" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="230" y="50"  width="10" height="10" fill="url(#gradPixel)"/>
+  <rect x="220" y="56"  width="10" height="4"  fill="#6366F1"/>
+  <rect x="230" y="56"  width="10" height="4"  fill="#6366F1"/>
+
+  <!-- Accent dot -->
+  <rect x="255" y="50" width="10" height="10" fill="#F472B6" filter="url(#glow)"/>
+  <rect x="255" y="50" width="10" height="4"  fill="#F9A8D4"/>
+
+  <!-- Tagline below -->
+  <text x="200" y="95" text-anchor="middle" font-family="monospace" font-size="11" fill="#4B5563" letter-spacing="6" font-weight="400">PIXEL NFT ON ETHEREUM</text>
+</svg>
