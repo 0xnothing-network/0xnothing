@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# env files — NEVER commit
+contracts/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# next.js
+frontend/.next/
+frontend/out/
+
+# hardhat
+contracts/cache/
+contracts/artifacts/
+
+# misc
+.DS_Store
+*.pem
+*.key
+credentials.*
+
+# debug
+*.log
