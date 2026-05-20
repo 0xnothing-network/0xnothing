@@ -1,16 +1,23 @@
 import { http, createConfig } from "wagmi";
 import { mainnet, sepolia } from "wagmi/chains";
-import { injected, coinbaseWallet } from "wagmi/connectors";
+import { injected, coinbaseWallet, walletConnect } from "wagmi/connectors";
 
 const alchemyUrl = process.env.NEXT_PUBLIC_ALCHEMY_API_URL;
-
-if (!alchemyUrl) {
-  throw new Error("NEXT_PUBLIC_ALCHEMY_API_URL is not set. Copy .env.example to .env and fill in your values.");
-}
+const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID ?? "";
 
 export const wagmiConfig = createConfig({
   chains: [mainnet, sepolia],
   connectors: [
+    walletConnect({
+      projectId: walletConnectProjectId,
+      metadata: {
+        name: "0xPixel",
+        description: "0xPixel - Pixel Network",
+        url: "https://0xpixel.io",
+        icons: ["https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/info/logo.png"],
+      },
+      showQrModal: true,
+    }),
     coinbaseWallet({
       appName: "0xPixel",
       appLogoUrl:
