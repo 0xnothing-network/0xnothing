@@ -13,15 +13,14 @@ export const wagmiConfig = createConfig({
       metadata: {
         name: "0xPixel",
         description: "0xPixel - Pixel Network",
-        url: "https://0xpixel.io",
-        icons: ["https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/info/logo.png"],
+        url: "https://0xnothing.xyz",
+        icons: ["https://0xnothing.xyz/icon.svg"],
       },
       showQrModal: true,
     }),
     coinbaseWallet({
       appName: "0xPixel",
-      appLogoUrl:
-        "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/info/logo.png",
+      appLogoUrl: "https://0xnothing.xyz/icon.svg",
       version: "4",
     }),
     injected({
