@@ -31,14 +31,6 @@ export default function GalleryPage() {
   const { data: delistHash, writeContract: delistNFT } = useWriteContract();
   const { isLoading: isDelisting, isSuccess: delistSuccess } = useWaitForTransactionReceipt({ hash: delistHash });
 
-  useEffect(() => {
-    if (isConnected && address) {
-      fetchUserTokens();
-    } else {
-      setTokens([]);
-    }
-  }, [isConnected, address, listSuccess, delistSuccess, fetchUserTokens]);
-
   const fetchUserTokens = useCallback(async () => {
     if (!address) return;
     setIsLoading(true);
@@ -51,7 +43,15 @@ export default function GalleryPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [address]);;
+  }, [address]);
+
+  useEffect(() => {
+    if (isConnected && address) {
+      fetchUserTokens();
+    } else {
+      setTokens([]);
+    }
+  }, [isConnected, address, listSuccess, delistSuccess, fetchUserTokens]);
 
   const handleListForSale = () => {
     if (!selectedToken || !listPrice) return;
