@@ -1,12 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { GridSkeleton } from "@/components/Skeleton";
-import { getUserNFTs, formatEther, getContractAddress } from "@/lib/contract";
-import { PixelNFTABI } from "@/lib/abi";
-import { parseEther } from "viem";
 import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState, useCallback } from "react";
 
 interface NFTItem {
   tokenId: bigint;

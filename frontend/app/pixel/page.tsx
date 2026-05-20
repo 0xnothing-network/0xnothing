@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Canvas } from "@/components/Canvas";
 import { Toolbar } from "@/components/Toolbar";

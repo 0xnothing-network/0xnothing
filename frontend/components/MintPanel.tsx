@@ -20,7 +20,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
   const [mounted, setMounted] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { data: _balance } = useBalance({ address });
+  const { data: _balance } = useBalance({ address }); // eslint-disable-line @typescript-eslint/no-unused-vars
   const { sendTransactionAsync } = useSendTransaction();
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -73,7 +73,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     },
   });
 
-  const { data: _originalCreator } = useReadContract({
+  const { data: _originalCreator } = useReadContract({ // eslint-disable-line @typescript-eslint/no-unused-vars
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
     functionName: "getOriginalCreator",
