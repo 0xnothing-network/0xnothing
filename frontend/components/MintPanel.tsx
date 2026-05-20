@@ -130,9 +130,10 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
       if (isConfirmed) {
         onMintSuccess(BigInt(0));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error("Mint error:", err);
-      if (err.message?.includes("already minted")) {
+      if (error.message?.includes("already minted")) {
         setError("This artwork has already been minted!");
       } else {
         setError("Failed to mint. Please try again.");

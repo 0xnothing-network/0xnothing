@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Canvas } from "@/components/Canvas";
 import { Toolbar } from "@/components/Toolbar";
@@ -102,10 +103,10 @@ export default function PixelPage() {
       <footer className="border-t border-white/5 py-5 mt-8">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-[#64748B] text-xs">
-            <a href="/" className="flex items-center gap-2 hover:text-white transition-colors">
+            <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
               <img src="/0xNothing.jpg" alt="0xNothing" className="w-5 h-5 rounded-full object-cover" />
               <span>by 0xNothing</span>
-            </a>
+            </Link>
           </div>
           <p className="text-[#4B5563] text-xs">Powered by Ethereum</p>
         </div>
