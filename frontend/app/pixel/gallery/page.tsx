@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { GridSkeleton } from "@/components/Skeleton";
 import { getUserNFTs, formatEther, getContractAddress } from "@/lib/contract";
@@ -36,9 +36,9 @@ export default function GalleryPage() {
     } else {
       setTokens([]);
     }
-  }, [isConnected, address, listSuccess, delistSuccess]);
+  }, [isConnected, address, listSuccess, delistSuccess, fetchUserTokens]);
 
-  const fetchUserTokens = async () => {
+  const fetchUserTokens = useCallback(async () => {
     if (!address) return;
     setIsLoading(true);
     try {
@@ -50,7 +50,7 @@ export default function GalleryPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [address]);;
 
   const handleListForSale = () => {
     if (!selectedToken || !listPrice) return;
@@ -168,11 +168,14 @@ export default function GalleryPage() {
               className="group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
             >
               <div className="relative aspect-square bg-[#0F0F23] p-4 flex items-center justify-center overflow-hidden">
-                <img
+                <Image
                   src={nft.imageUrl}
                   alt={nft.data?.name || "Pixel Art"}
+                  width={512}
+                  height={512}
                   className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
                   style={{ imageRendering: "pixelated" }}
+                  unoptimized
                 />
                 {nft.isForSale && (
                   <div className="absolute top-3 right-3 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
@@ -291,7 +294,7 @@ export default function GalleryPage() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-[#64748B] text-xs">
             <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
-              <img src="/0xNothing.jpg" alt="0xNothing" className="w-5 h-5 rounded-full object-cover" />
+              <Image src="/0xNothing.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
               <span>by 0xNothing</span>
             </Link>
           </div>

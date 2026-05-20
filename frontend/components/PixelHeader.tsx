@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 
@@ -23,9 +24,11 @@ export function PixelHeader() {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <img
+          <Image
             src="/0xNothing.jpg"
             alt="0xNothing Logo"
+            width={32}
+            height={32}
             className="w-8 h-8 rounded-full object-cover"
           />
           <span className="text-white font-bold text-base tracking-tight">0xPixel</span>

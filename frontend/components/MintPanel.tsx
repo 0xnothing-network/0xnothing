@@ -20,7 +20,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
   const [mounted, setMounted] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { data: balance } = useBalance({ address });
+  const { data: _balance } = useBalance({ address });
   const { sendTransactionAsync } = useSendTransaction();
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
@@ -73,7 +73,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     },
   });
 
-  const { data: originalCreator } = useReadContract({
+  const { data: _originalCreator } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
     functionName: "getOriginalCreator",

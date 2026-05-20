@@ -57,7 +57,7 @@ async function fetchTokenDataCached(tokenId: bigint): Promise<TokenData | null> 
     const result = data as TokenData;
     tokenDataCache.set(key, { data: result, timestamp: Date.now() });
     return result;
-  } catch (error) {
+  } catch {
     tokenDataCache.set(key, { data: null, timestamp: Date.now() });
     return null;
   }

@@ -190,6 +190,7 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
     }
 
     drawPixel(gridX, gridY, tool, selectedColorRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gridSize, zoom, pan, floodFill, drawPixel]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {

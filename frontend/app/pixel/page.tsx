@@ -104,7 +104,7 @@ export default function PixelPage() {
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-[#64748B] text-xs">
             <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
-              <img src="/0xNothing.jpg" alt="0xNothing" className="w-5 h-5 rounded-full object-cover" />
+              <Image src="/0xNothing.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
               <span>by 0xNothing</span>
             </Link>
           </div>

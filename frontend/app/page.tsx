@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 const PRODUCTS = [
@@ -74,9 +75,11 @@ export default function LandingPage() {
       {/* Nav */}
       <header className="relative z-10 px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <img
+          <Image
             src="/0xNothing.jpg"
             alt="0xNothing"
+            width={36}
+            height={36}
             className="w-9 h-9 rounded-full object-cover shadow-lg"
           />
           <span className="text-white font-semibold text-base tracking-tight">0xNothing</span>
@@ -188,17 +191,17 @@ export default function LandingPage() {
           <div style={{ position: "absolute", width: "380px", height: "380px", animation: "orbitPlanet 20s linear infinite" }}>
             <div className="absolute" style={{ bottom: "0", left: "50%", transform: "translate(-50%, 50%)" }}>
               <div style={{ animation: "tiltPlanet 20s ease-in-out infinite" }}>
-                <img
-                  src="/0xNothing.jpg"
-                  alt="0xNothing"
-                  className="object-cover rounded-full"
-                  style={{
-                    width: "90px",
-                    height: "90px",
-                    boxShadow: "0 0 40px rgba(99,102,241,0.6), 0 0 80px rgba(99,102,241,0.3), 0 0 120px rgba(139,92,246,0.15)",
-                    border: "2px solid rgba(255,255,255,0.15)",
-                  }}
-                />
+              <Image
+                src="/0xNothing.jpg"
+                alt="0xNothing"
+                width={90}
+                height={90}
+                className="object-cover rounded-full"
+                style={{
+                  boxShadow: "0 0 40px rgba(99,102,241,0.6), 0 0 80px rgba(99,102,241,0.3), 0 0 120px rgba(139,92,246,0.15)",
+                  border: "2px solid rgba(255,255,255,0.15)",
+                }}
+              />
               </div>
             </div>
           </div>
@@ -296,7 +299,7 @@ export default function LandingPage() {
                       <div className="relative">
                         <div className="flex items-center gap-3 mb-3">
                           {p.id === "0xPixel" ? (
-                            <img src="/icon.svg" alt={p.name} className="w-10 h-10 rounded-xl object-cover" />
+                            <Image src="/icon.svg" alt={p.name} width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
                           ) : (
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white" style={{ background: p.color }}>
                               {p.name.slice(0, 2)}
