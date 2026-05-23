@@ -287,7 +287,7 @@ export default function MarketplacePage() {
                         loading={isBuyingThis && txPending}
                         className="w-full"
                       >
-                        {isBuyingThis && isBuying ? "PURCHASING..." : "BUY NOW"}
+                        {isBuyingThis ? "PURCHASING..." : "BUY NOW"}
                       </PixelButton>
                     ) : (
                       <p className="text-center text-[#94A3B8] text-xs py-2" style={{ fontFamily: "var(--font-mono)" }}>
