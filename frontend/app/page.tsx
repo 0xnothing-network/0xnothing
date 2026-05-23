@@ -196,10 +196,10 @@ export default function LandingPage() {
                 alt="0xNothing"
                 width={90}
                 height={90}
-                className="object-cover rounded-full"
+                className="rounded-full object-cover"
                 style={{
-                  boxShadow: "0 0 40px rgba(99,102,241,0.6), 0 0 80px rgba(99,102,241,0.3), 0 0 120px rgba(139,92,246,0.15)",
-                  border: "2px solid rgba(255,255,255,0.15)",
+                  boxShadow: "0 0 30px rgba(99,102,241,0.8), 0 0 60px rgba(99,102,241,0.5), 0 0 90px rgba(139,92,246,0.3)",
+                  border: "2px solid rgba(255,255,255,0.3)",
                 }}
               />
               </div>
@@ -299,7 +299,7 @@ export default function LandingPage() {
                       <div className="relative">
                         <div className="flex items-center gap-3 mb-3">
                           {p.id === "0xPixel" ? (
-                            <Image src="/icon.svg" alt={p.name} width={40} height={40} className="w-10 h-10 rounded-xl object-cover" />
+                            <Image src="/icon.svg" alt={p.name} width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
                           ) : (
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white" style={{ background: p.color }}>
                               {p.name.slice(0, 2)}

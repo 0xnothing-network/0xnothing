@@ -9,9 +9,16 @@
   --primary: #6366F1;
   --secondary: #8B5CF6;
   --muted: #64748B;
+  --muted-light: #94A3B8;
+  --muted-dark: #374151;
   --success: #10B981;
   --error: #EF4444;
   --amber: #F59E0B;
+  --indigo: #6366F1;
+  --purple: #8B5CF6;
+  --grid-line: #1F1F3A;
+  --grid-line-strong: #252540;
+  --text-muted: #64748B;
 }
 
 * {
@@ -158,4 +165,152 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(99, 102, 241, 0.12);
+}
+
+/* ============================================
+   Pixel Art Button System
+   Inspired by 8-bit retro gaming UI
+   ============================================ */
+
+.pixel-btn {
+  position: relative;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 6px 14px;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 0;
+  clip-path: polygon(
+    0 4px, 4px 4px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+  box-shadow:
+    0 0 0 1px var(--border-color, rgba(255,255,255,0.06)),
+    4px 4px 0 0 var(--shadow-color, #0a0a18);
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  user-select: none;
+  image-rendering: pixelated;
+}
+
+.pixel-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow:
+    0 0 0 1px var(--border-color, rgba(255,255,255,0.06)),
+    2px 2px 0 0 var(--shadow-color, #0a0a18);
+}
+
+.pixel-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  color: var(--muted);
+}
+
+/* Pixel button color variants */
+.pixel-btn-indigo {
+  --border-color: rgba(99, 102, 241, 0.4);
+  --shadow-color: rgba(99, 102, 241, 0.25);
+  background: linear-gradient(180deg, #6366F1 0%, #4F46E5 100%);
+  color: #fff;
+}
+
+.pixel-btn-indigo:hover:not(:disabled) {
+  background: linear-gradient(180deg, #818CF8 0%, #6366F1 100%);
+  box-shadow:
+    0 0 0 1px rgba(99, 102, 241, 0.6),
+    4px 4px 0 0 rgba(99, 102, 241, 0.3),
+    0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+.pixel-btn-emerald {
+  --border-color: rgba(16, 185, 129, 0.4);
+  --shadow-color: rgba(16, 185, 129, 0.25);
+  background: linear-gradient(180deg, #10B981 0%, #059669 100%);
+  color: #fff;
+}
+
+.pixel-btn-emerald:hover:not(:disabled) {
+  background: linear-gradient(180deg, #34D399 0%, #10B981 100%);
+  box-shadow:
+    0 0 0 1px rgba(16, 185, 129, 0.6),
+    4px 4px 0 0 rgba(16, 185, 129, 0.3),
+    0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.pixel-btn-red {
+  --border-color: rgba(239, 68, 68, 0.4);
+  --shadow-color: rgba(239, 68, 68, 0.2);
+  background: linear-gradient(180deg, #EF4444 0%, #DC2626 100%);
+  color: #fff;
+}
+
+.pixel-btn-red:hover:not(:disabled) {
+  background: linear-gradient(180deg, #F87171 0%, #EF4444 100%);
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.6),
+    4px 4px 0 0 rgba(239, 68, 68, 0.3),
+    0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.pixel-btn-secondary {
+  --border-color: rgba(255,255,255,0.08);
+  --shadow-color: rgba(0,0,0,0.5);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.pixel-btn-secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: #fff;
+  --border-color: rgba(255,255,255,0.15);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.12),
+    4px 4px 0 0 rgba(0,0,0,0.5),
+    0 0 8px rgba(255,255,255,0.05);
+}
+
+/* Pixel button small (icon buttons) */
+.pixel-btn-sm {
+  padding: 4px 8px;
+  font-size: 9px;
+}
+
+.pixel-btn-icon {
+  padding: 5px 7px;
+  font-size: 0;
+}
+
+/* Pixel badge */
+.pixel-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 0;
+  clip-path: polygon(
+    0 3px, 3px 3px, 3px 0,
+    calc(100% - 3px) 0, calc(100% - 3px) 3px, 100% 3px,
+    100% calc(100% - 3px), calc(100% - 3px) calc(100% - 3px), calc(100% - 3px) 100%,
+    3px 100%, 3px calc(100% - 3px), 0 calc(100% - 3px)
+  );
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Pixel spinner */
+@keyframes pixel-spin {
+  to { transform: rotate(360deg); }
 }

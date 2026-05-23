@@ -188,10 +188,11 @@ export const PixelNFTABI = [
   },
   {
     "inputs": [
+      { "name": "from", "type": "address" },
       { "name": "to", "type": "address" },
       { "name": "tokenId", "type": "uint256" }
     ],
-    "name": "approve",
+    "name": "transferFrom",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -201,7 +202,7 @@ export const PixelNFTABI = [
       { "name": "to", "type": "address" },
       { "name": "tokenId", "type": "uint256" }
     ],
-    "name": "transfer",
+    "name": "approve",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -14,6 +14,7 @@ export default function PixelPage() {
   const [pixelData, setPixelData] = useState<string[][]>(() =>
     Array(DEFAULT_GRID_SIZE).fill(null).map(() => Array(DEFAULT_GRID_SIZE).fill("transparent"))
   );
+  const [history, setHistory] = useState<string[][][]>([]);
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [mounted, setMounted] = useState(false);
 
@@ -23,15 +24,31 @@ export default function PixelPage() {
 
   useEffect(() => {
     setPixelData(Array(gridSize).fill(null).map(() => Array(gridSize).fill("transparent")));
+    setHistory([]);
   }, [gridSize]);
 
   const handleClear = () => {
+    setHistory(h => [...h, pixelData.map(row => [...row])].slice(-50));
     setPixelData(Array(gridSize).fill(null).map(() => Array(gridSize).fill("transparent")));
   };
 
   const handleApplyPixelData = (newPixelData: string[][]) => {
+    setHistory(h => [...h, pixelData.map(row => [...row])].slice(-50));
     setPixelData(newPixelData);
   };
+
+  const handleStrokeStart = () => {
+    setHistory(h => [...h, pixelData.map(row => [...row])].slice(-50));
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setPixelData(prev);
+  };
+
+  const canUndo = history.length > 0;
 
   const handleMintSuccess = (tokenId: bigint) => {
     console.log("Minted:", tokenId);
@@ -54,7 +71,7 @@ export default function PixelPage() {
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight leading-tight">
             Create your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">pixel masterpiece</span>
           </h1>
-          <p className="text-[#94A3B8] text-base md:text-lg max-w-md mx-auto">
+          <p className="text-[var(--muted-light)] text-base md:text-lg max-w-md mx-auto">
             Draw. Mint. Trade on Ethereum.
           </p>
         </div>
@@ -83,6 +100,9 @@ export default function PixelPage() {
               setPixelData={setPixelData}
               selectedColor={selectedColor}
               onColorPick={setSelectedColor}
+              onStrokeStart={handleStrokeStart}
+              onUndo={handleUndo}
+              canUndo={canUndo}
             />
           </div>
 
@@ -103,13 +123,13 @@ export default function PixelPage() {
 
       <footer className="border-t border-white/5 py-5 mt-8">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-[#64748B] text-xs">
+          <div className="flex items-center gap-2 text-[var(--muted)] text-xs">
             <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
-              <Image src="/0xNothing.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
+              <Image src="/0xNothing-by.jpg" alt="0xNothing" width={20} height={20} priority className="w-5 h-5 rounded-full object-cover" />
               <span>by 0xNothing</span>
             </Link>
           </div>
-          <p className="text-[#4B5563] text-xs">Powered by Ethereum</p>
+          <p className="text-[var(--muted-dark)] text-xs">Built on Ethereum</p>
         </div>
       </footer>
     </div>

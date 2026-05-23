@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
+import { publicClient } from "@/lib/contract";
 import { GridSkeleton } from "@/components/Skeleton";
+import { PixelButton } from "@/components/PixelButton";
 import { getUserNFTs, formatEther, getContractAddress } from "@/lib/contract";
 import { PixelNFTABI } from "@/lib/abi";
 import { parseEther } from "viem";
@@ -23,13 +25,12 @@ export default function GalleryPage() {
   const [selectedToken, setSelectedToken] = useState<NFTItem | null>(null);
   const [showListModal, setShowListModal] = useState(false);
   const [listPrice, setListPrice] = useState("");
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendAddress, setSendAddress] = useState("");
   const [txStatus, setTxStatus] = useState<{ type: "success" | "error" | "pending"; message: string } | null>(null);
+  const [txPending, setTxPending] = useState(false);
 
-  const { data: listHash, writeContract: listForSale } = useWriteContract();
-  const { isLoading: isListing, isSuccess: listSuccess } = useWaitForTransactionReceipt({ hash: listHash });
-
-  const { data: delistHash, writeContract: delistNFT } = useWriteContract();
-  const { isLoading: isDelisting, isSuccess: delistSuccess } = useWaitForTransactionReceipt({ hash: delistHash });
+  const { writeContractAsync } = useWriteContract();
 
   const fetchUserTokens = useCallback(async () => {
     if (!address) return;
@@ -51,30 +52,91 @@ export default function GalleryPage() {
     } else {
       setTokens([]);
     }
-  }, [isConnected, address, listSuccess, delistSuccess, fetchUserTokens]);
+  }, [isConnected, address, fetchUserTokens]);
 
-  const handleListForSale = () => {
-    if (!selectedToken || !listPrice) return;
-    setTxStatus({ type: "pending", message: "Listing NFT..." });
-    const priceInWei = parseEther(listPrice);
-    listForSale({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "listForSale",
-      args: [selectedToken.tokenId, priceInWei],
-    });
-    setShowListModal(false);
-    setListPrice("");
+  const handleSend = async () => {
+    if (!selectedToken || !sendAddress) return;
+    if (!/^0x[0-9a-fA-F]{40}$/.test(sendAddress)) {
+      setTxStatus({ type: "error", message: "Invalid Ethereum address" });
+      return;
+    }
+    setTxStatus({ type: "pending", message: "Sending NFT..." });
+    setTxPending(true);
+    try {
+      console.log("[DEBUG] transferFrom params:", {
+        from: address,
+        to: sendAddress,
+        tokenId: selectedToken.tokenId.toString(),
+        contractAddress: getContractAddress(),
+      });
+      const hash = await writeContractAsync({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "transferFrom",
+        args: [address as `0x${string}`, sendAddress as `0x${string}`, selectedToken.tokenId],
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setShowSendModal(false);
+      setSendAddress("");
+      setSelectedToken(null);
+      setTxStatus({ type: "success", message: "NFT sent successfully!" });
+      fetchUserTokens();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string; details?: string };
+      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
+      setTxStatus({ type: "error", message: msg });
+    } finally {
+      setTxPending(false);
+    }
   };
 
-  const handleDelist = (tokenId: bigint) => {
+  const handleListForSale = async () => {
+    if (!selectedToken || !listPrice) return;
+    setTxStatus({ type: "pending", message: "Listing NFT..." });
+    setTxPending(true);
+    try {
+      const priceInWei = parseEther(listPrice);
+      const hash = await writeContractAsync({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "listForSale",
+        args: [selectedToken.tokenId, priceInWei],
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setShowListModal(false);
+      setListPrice("");
+      setSelectedToken(null);
+      setTxStatus({ type: "success", message: "NFT listed successfully!" });
+      fetchUserTokens();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string; details?: string };
+      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
+      setTxStatus({ type: "error", message: msg });
+    } finally {
+      setTxPending(false);
+    }
+  };
+
+  const handleDelist = async (tokenId: bigint) => {
     setTxStatus({ type: "pending", message: "Removing from marketplace..." });
-    delistNFT({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "delist",
-      args: [tokenId],
-    });
+    setTxPending(true);
+    try {
+      const hash = await writeContractAsync({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "delist",
+        args: [tokenId],
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setTxStatus({ type: "success", message: "Listing removed!" });
+      fetchUserTokens();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string; details?: string };
+      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
+      setTxStatus({ type: "error", message: msg });
+    } finally {
+      setTxPending(false);
+    }
   };
 
   const openListModal = (nft: NFTItem) => {
@@ -151,14 +213,11 @@ export default function GalleryPage() {
           <p className="text-[#94A3B8] mb-8 max-w-sm mx-auto">
             Start creating and mint your first pixel art NFT
           </p>
-          <Link
-            href="/pixel"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-90 text-white rounded-xl font-medium transition-all shadow-lg shadow-indigo-500/25"
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <Link href="/pixel" className="pixel-btn pixel-btn-indigo" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 10 }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Start Drawing
+            START DRAWING
           </Link>
         </div>
       ) : (
@@ -168,19 +227,19 @@ export default function GalleryPage() {
               key={nft.tokenId.toString()}
               className="group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
             >
-              <div className="relative aspect-square bg-[#0F0F23] p-4 flex items-center justify-center overflow-hidden">
+              <div className="relative aspect-square bg-[#0F0F23] flex items-center justify-center overflow-hidden">
                 <Image
                   src={nft.imageUrl}
                   alt={nft.data?.name || "Pixel Art"}
                   width={512}
                   height={512}
-                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-contain"
                   style={{ imageRendering: "pixelated" }}
                   unoptimized
                 />
                 {nft.isForSale && (
-                  <div className="absolute top-3 right-3 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                    For Sale
+                  <div className="pixel-badge" style={{ background: "rgba(16,185,129,0.15)", color: "#34D399", borderColor: "rgba(16,185,129,0.3)" }}>
+                    FOR SALE
                   </div>
                 )}
               </div>
@@ -204,25 +263,98 @@ export default function GalleryPage() {
                   </p>
                 )}
                 <div className="pt-3 border-t border-[#2D2D44] space-y-2">
-                  <button
-                    onClick={() => openListModal(nft)}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-indigo-500/20"
-                  >
-                    {nft.isForSale ? "Update Price" : "List for Sale"}
-                  </button>
-                  {nft.isForSale && (
-                    <button
-                      onClick={() => handleDelist(nft.tokenId)}
-                      disabled={isDelisting}
-                      className="w-full py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-all disabled:opacity-50 border border-red-500/20"
+                  <div className="grid grid-cols-2 gap-2">
+                    <PixelButton
+                      variant="indigo"
+                      size="sm"
+                      onClick={() => openListModal(nft)}
                     >
-                      {isDelisting ? "Removing..." : "Remove Listing"}
-                    </button>
+                      {nft.isForSale ? "UPDATE" : "LIST"}
+                    </PixelButton>
+                    <PixelButton
+                      variant="secondary"
+                      size="sm"
+                      loading={txPending}
+                      onClick={() => { setSelectedToken(nft); setShowSendModal(true); }}
+                    >
+                      SEND
+                    </PixelButton>
+                  </div>
+                  {nft.isForSale && (
+                    <PixelButton
+                      variant="red"
+                      size="sm"
+                      loading={txPending}
+                      onClick={() => handleDelist(nft.tokenId)}
+                    >
+                      REMOVE LISTING
+                    </PixelButton>
                   )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Send NFT Modal */}
+      {showSendModal && selectedToken && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowSendModal(false)}>
+          <div className="bg-[#1A1A2E] rounded-2xl p-6 w-full max-w-md border border-[#2D2D44] shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white font-bold text-xl">Send NFT</h3>
+              <button onClick={() => { setShowSendModal(false); setSendAddress(""); setSelectedToken(null); }} className="w-8 h-8 rounded-lg bg-[#2D2D44] hover:bg-[#3D3D54] flex items-center justify-center text-[#94A3B8] transition-colors">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Preview */}
+            <div className="flex items-center gap-3 p-3 bg-[#0F0F23] rounded-xl border border-[#2D2D44] mb-5">
+              <img src={selectedToken.imageUrl} alt={selectedToken.data?.name || ""} className="w-12 h-12 rounded-lg object-contain" style={{ imageRendering: "pixelated" }} />
+              <div className="min-w-0">
+                <p className="text-white text-sm font-medium truncate">{selectedToken.data?.name || "Untitled"}</p>
+                <p className="text-[#64748B] text-xs font-mono">#{selectedToken.tokenId.toString()}</p>
+              </div>
+            </div>
+
+            <div className="space-y-5">
+              <div>
+                <label className="text-white text-sm font-medium mb-2 block">Recipient Address</label>
+                <input
+                  type="text"
+                  value={sendAddress}
+                  onChange={(e) => setSendAddress(e.target.value)}
+                  placeholder="0x..."
+                  className="w-full px-4 py-3 rounded-xl bg-[#2D2D44] text-white placeholder-[#64748B] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono text-sm"
+                />
+                {sendAddress && !/^0x[0-9a-fA-F]{40}$/.test(sendAddress) && (
+                  <p className="text-red-400 text-xs mt-1.5">Invalid Ethereum address format</p>
+                )}
+              </div>
+
+              <div className="bg-[#0F0F23] rounded-xl p-4 border border-[#2D2D44]">
+                <p className="text-[#94A3B8] text-xs leading-relaxed">
+                  This action is <span className="text-amber-400 font-medium">irreversible</span>. The NFT will be transferred directly to the recipient's wallet.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <PixelButton variant="secondary" onClick={() => { setShowSendModal(false); setSendAddress(""); setSelectedToken(null); }}>
+                  CANCEL
+                </PixelButton>
+                <PixelButton
+                  variant="indigo"
+                  onClick={handleSend}
+                  disabled={!sendAddress || !/^0x[0-9a-fA-F]{40}$/.test(sendAddress) || txPending}
+                  loading={txPending}
+                >
+                  {txPending ? "SENDING..." : "SEND NFT"}
+                </PixelButton>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -272,19 +404,17 @@ export default function GalleryPage() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => { setShowListModal(false); setSelectedToken(null); setListPrice(""); }}
-                  className="flex-1 py-3 rounded-xl bg-[#2D2D44] text-white font-medium hover:bg-[#3D3D54] transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
+                <PixelButton variant="secondary" onClick={() => { setShowListModal(false); setSelectedToken(null); setListPrice(""); }}>
+                  CANCEL
+                </PixelButton>
+                <PixelButton
+                  variant="emerald"
                   onClick={handleListForSale}
-                  disabled={!listPrice || isListing}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-emerald-500/25"
+                  disabled={!listPrice || txPending}
+                  loading={txPending}
                 >
-                  {isListing ? "Listing..." : "List Now"}
-                </button>
+                  {txPending ? "LISTING..." : "LIST NOW"}
+                </PixelButton>
               </div>
             </div>
           </div>
@@ -295,11 +425,11 @@ export default function GalleryPage() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-[#64748B] text-xs">
             <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
-              <Image src="/0xNothing.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
+              <Image src="/0xNothing-by.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
               <span>by 0xNothing</span>
             </Link>
           </div>
-          <p className="text-[#4B5563] text-xs">Powered by Ethereum</p>
+          <p className="text-[#4B5563] text-xs">Built on Ethereum</p>
         </div>
       </footer>
     </div>

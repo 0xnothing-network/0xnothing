@@ -6,7 +6,7 @@
     </linearGradient>
   </defs>
   <!-- Dark bg -->
-  <rect width="64" height="64" rx="12" fill="#1A1A2E"/>
+  <rect width="64" height="64" rx="50%" fill="#1A1A2E"/>
   <!-- "0x" pixel block -->
   <!-- 0 -->
   <rect x="4"  y="8"  width="8"  height="8"  fill="url(#g)"/>

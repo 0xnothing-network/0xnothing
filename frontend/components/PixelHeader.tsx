@@ -11,28 +11,52 @@ const NAV_LINKS = [
   { href: "/pixel/marketplace", label: "Marketplace" },
 ];
 
+interface ContractStats {
+  totalFees: string;
+  txCount: number;
+}
+
 export function PixelHeader() {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [stats, setStats] = useState<ContractStats>({ totalFees: "—", txCount: 0 });
 
   useEffect(() => {
     setMounted(true);
+    fetch("/api/contract-stats")
+      .then((r) => r.json())
+      .then((data: ContractStats) => {
+        setStats({ totalFees: data.totalFees, txCount: data.txCount });
+      })
+      .catch(() => {});
   }, []);
 
   return (
     <header className="sticky top-0 z-50 bg-[#13131F]/90 backdrop-blur-xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <Image
-            src="/0xNothing.jpg"
-            alt="0xNothing Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-          <span className="text-white font-bold text-base tracking-tight">0xPixel</span>
-        </Link>
+        {/* Logo + Brand */}
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2 group">
+            <Image
+              src="/icon.svg"
+              alt="0xNothing Logo"
+              width={32}
+              height={32}
+              priority
+              className="w-8 h-8 rounded-full object-cover"
+            />
+            <span className="text-white font-bold text-base tracking-tight">0xPixel</span>
+          </Link>
+            <a
+            href="https://etherscan.io/address/0x7bE3B9035AAAcB57b6634eCBa65402e37E30Bf66#analytics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+          >
+            <span className="text-[#94A3B8] text-xs">Fees Burned</span>
+            <span className="text-emerald-400 text-xs font-bold">{stats.totalFees} ETH</span>
+          </a>
+        </div>
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-2">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { PixelButton } from "@/components/PixelButton";
 
 interface AIPromptGeneratorProps {
   gridSize: number;
@@ -10,6 +11,11 @@ interface AIPromptGeneratorProps {
 export function AIPromptGenerator({ gridSize, onApplyPixelData }: AIPromptGeneratorProps) {
   const [generated, setGenerated] = useState("");
   const [parsed, setParsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const parseGridData = (text: string): string[][] => {
     const newPixelData: string[][] = Array(gridSize).fill(null).map(() =>
@@ -45,36 +51,51 @@ export function AIPromptGenerator({ gridSize, onApplyPixelData }: AIPromptGenera
 
   const count = (generated.match(/\[(\d+),(\d+)\]\s*=\s*(#[0-9A-Fa-f]{6})/g) || []).length;
 
+  if (!mounted) {
+    return (
+      <div className="bg-[var(--surface)] rounded-2xl p-4 border border-[var(--border)] space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-purple-500/10 animate-pulse" />
+          <div className="h-3 w-28 bg-white/5 rounded animate-pulse" />
+        </div>
+        <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+        <div className="h-8 bg-white/5 rounded-xl animate-pulse" />
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-[#13131F] rounded-2xl p-4 border border-white/5">
+    <div className="bg-[var(--surface)] rounded-2xl p-4 border border-[var(--border)]">
       <div className="flex items-center gap-2 mb-3">
         <div className="w-6 h-6 rounded-md bg-purple-500/10 flex items-center justify-center">
           <svg className="w-3.5 h-3.5 text-purple-400/70" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
           </svg>
         </div>
-        <p className="text-[#64748B] text-xs">Grid data parser</p>
+        <p className="text-[var(--muted)] text-xs">Grid data parser</p>
       </div>
 
       <textarea
         value={generated}
         onChange={(e) => setGenerated(e.target.value)}
         placeholder="[0,0]=#FF0000&#10;[1,0]=#00FF00"
-        className="w-full px-3 py-2 rounded-xl bg-white/5 text-white placeholder-[#4B5563] focus:outline-none focus:border-white/10 resize-none font-mono text-[11px] leading-relaxed border border-transparent transition-all"
+        className="w-full px-3 py-2 rounded-xl bg-white/5 text-white placeholder-[var(--muted-dark)] focus:outline-none focus:border-white/10 resize-none font-mono text-[11px] leading-relaxed border border-transparent transition-all"
         rows={4}
       />
 
       {count > 0 && (
-        <p className="text-[#4B5563] text-[11px] mt-1.5">{count} pixel{count !== 1 ? "s" : ""} detected</p>
+        <p className="text-[var(--muted-dark)] text-[11px] mt-1.5">{count} pixel{count !== 1 ? "s" : ""} detected</p>
       )}
 
-      <button
+      <PixelButton
+        variant="secondary"
         onClick={handleParse}
         disabled={!generated.trim()}
-        className="w-full mt-2.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[#64748B] hover:text-white border border-transparent hover:border-white/10 transition-all duration-150 text-xs font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+        className="w-full mt-2.5"
+        style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}
       >
-        {parsed ? "Applied!" : "Apply to canvas"}
-      </button>
+        {parsed ? "APPLIED!" : "APPLY TO CANVAS"}
+      </PixelButton>
     </div>
   );
 }

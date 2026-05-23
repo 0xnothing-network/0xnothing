@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
+import { publicClient } from "@/lib/contract";
 import { GridSkeleton } from "@/components/Skeleton";
+import { PixelButton } from "@/components/PixelButton";
 import { getMarketplaceNFTs, formatEther, getContractAddress } from "@/lib/contract";
 import { PixelNFTABI } from "@/lib/abi";
 import { parseEther } from "viem";
@@ -34,32 +36,14 @@ export default function MarketplacePage() {
   const [showListingModal, setShowListingModal] = useState(false);
   const [selectedTokenId, setSelectedTokenId] = useState<bigint | null>(null);
   const [txStatus, setTxStatus] = useState<{ type: "success" | "error" | "pending"; message: string } | null>(null);
+  const [txPending, setTxPending] = useState(false);
   const [gridFilter, setGridFilter] = useState<number | "all">("all");
 
-  const { data: buyHash, writeContract: buyNFT } = useWriteContract();
-  const { isLoading: isBuying, isSuccess: buySuccess } = useWaitForTransactionReceipt({ hash: buyHash });
-
-  const { data: listHash, writeContract: listForSale } = useWriteContract();
-  const { isLoading: isListing, isSuccess: listSuccess } = useWaitForTransactionReceipt({ hash: listHash });
+  const { writeContractAsync } = useWriteContract();
 
   useEffect(() => {
     fetchNFTsForSale();
   }, []);
-
-  useEffect(() => {
-    if (buySuccess || listSuccess) {
-      fetchNFTsForSale();
-      setBuyingId(null);
-      setShowListingModal(false);
-      setSelectedTokenId(null);
-      setListingPrice("");
-      setTxStatus({
-        type: "success",
-        message: buySuccess ? "NFT purchased successfully!" : "Price updated successfully!",
-      });
-      setTimeout(() => setTxStatus(null), 4000);
-    }
-  }, [buySuccess, listSuccess]);
 
   const fetchNFTsForSale = async () => {
     setIsLoading(true);
@@ -79,28 +63,57 @@ export default function MarketplacePage() {
       ? nfts
       : nfts.filter((n) => Number(n.data?.gridSize) === gridFilter);
 
-  const handleBuy = (tokenId: bigint, price: bigint) => {
+  const handleBuy = async (tokenId: bigint, price: bigint) => {
     setTxStatus({ type: "pending", message: "Purchasing NFT..." });
     setBuyingId(tokenId);
-    buyNFT({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "buyNFT",
-      args: [tokenId],
-      value: price,
-    });
+    setTxPending(true);
+    try {
+      const hash = await writeContractAsync({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "buyNFT",
+        args: [tokenId],
+        value: price,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setBuyingId(null);
+      setTxStatus({ type: "success", message: "NFT purchased successfully!" });
+      fetchNFTsForSale();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string; details?: string };
+      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
+      setTxStatus({ type: "error", message: msg });
+      setBuyingId(null);
+    } finally {
+      setTxPending(false);
+    }
   };
 
-  const handleList = () => {
+  const handleList = async () => {
     if (!selectedTokenId || !listingPrice) return;
     setTxStatus({ type: "pending", message: "Updating price..." });
-    const priceInWei = parseEther(listingPrice);
-    listForSale({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "listForSale",
-      args: [selectedTokenId, priceInWei],
-    });
+    setTxPending(true);
+    try {
+      const priceInWei = parseEther(listingPrice);
+      const hash = await writeContractAsync({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "listForSale",
+        args: [selectedTokenId, priceInWei],
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+      setShowListingModal(false);
+      setSelectedTokenId(null);
+      setListingPrice("");
+      setTxStatus({ type: "success", message: "Price updated successfully!" });
+      fetchNFTsForSale();
+    } catch (err: unknown) {
+      const error = err as { shortMessage?: string; message?: string; details?: string };
+      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
+      setTxStatus({ type: "error", message: msg });
+    } finally {
+      setTxPending(false);
+    }
   };
 
   return (
@@ -128,18 +141,14 @@ export default function MarketplacePage() {
 
       {/* Grid Size Filter */}
       <div className="mb-6 flex items-center gap-2 flex-wrap">
-        <span className="text-[#64748B] text-sm">Grid:</span>
-        {(["all", 8, 16, 24, 32, 48, 64] as const).map((size) => (
+        <span className="text-[#64748B] text-sm">GRID:</span>
+        {(["all", 16, 32, 64] as const).map((size) => (
           <button
             key={size}
             onClick={() => setGridFilter(size)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              gridFilter === size
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/25"
-                : "bg-[#1A1A2E] text-[#94A3B8] border border-[#2D2D44] hover:border-indigo-500/50 hover:text-white"
-            }`}
+            className={gridFilter === size ? "pixel-btn pixel-btn-indigo pixel-btn-sm" : "pixel-btn pixel-btn-secondary pixel-btn-sm"}
           >
-            {size === "all" ? "All" : `${size}×${size}`}
+            {size === "all" ? "ALL" : `${size}`}
           </button>
         ))}
       </div>
@@ -183,14 +192,11 @@ export default function MarketplacePage() {
           <p className="text-[#94A3B8] max-w-sm mx-auto">
             Be the first to list your pixel art NFT on the marketplace
           </p>
-          <Link
-            href="/pixel"
-            className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] hover:opacity-90 text-white rounded-xl font-medium transition-all shadow-lg shadow-indigo-500/25"
-          >
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <Link href="/pixel" className="pixel-btn pixel-btn-indigo" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 10 }}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Create Pixel Art
+            CREATE PIXEL ART
           </Link>
         </div>
       ) : displayedNfts.length === 0 ? (
@@ -216,13 +222,13 @@ export default function MarketplacePage() {
                 key={nft.tokenId.toString()}
                 className="group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
               >
-                <div className="relative aspect-square bg-[#0F0F23] p-4 flex items-center justify-center overflow-hidden">
+                <div className="relative aspect-square bg-[#0F0F23] flex items-center justify-center overflow-hidden">
                 <Image
                   src={nft.imageUrl}
                   alt={nft.data?.name || "Pixel Art"}
                   width={512}
                   height={512}
-                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-contain"
                   style={{ imageRendering: "pixelated" }}
                   unoptimized
                 />
@@ -263,38 +269,29 @@ export default function MarketplacePage() {
                     )}
 
                     {isOwn ? (
-                      <button
+                      <PixelButton
+                        variant="secondary"
                         onClick={() => {
                           setSelectedTokenId(nft.tokenId);
                           setShowListingModal(true);
                         }}
-                        className="w-full py-2.5 rounded-xl bg-[#2D2D44] hover:bg-[#3D3D54] text-white text-sm font-medium transition-all border border-[#3D3D54]"
+                        className="w-full"
                       >
-                        Edit Price
-                      </button>
+                        EDIT PRICE
+                      </PixelButton>
                     ) : isConnected ? (
-                      <button
+                      <PixelButton
+                        variant="emerald"
                         onClick={() => handleBuy(nft.tokenId, nft.data?.price || 0n)}
-                        disabled={isBuyingThis}
-                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium transition-all hover:opacity-90 disabled:opacity-50 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                        disabled={isBuyingThis || txPending}
+                        loading={isBuyingThis && txPending}
+                        className="w-full"
                       >
-                        {isBuyingThis && isBuying ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Purchasing...
-                          </>
-                        ) : (
-                          <>
-                            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                              <path d="M3 3h18v18H3zM12 8v8M8 12h8" />
-                            </svg>
-                            Buy Now
-                          </>
-                        )}
-                      </button>
+                        {isBuyingThis && isBuying ? "PURCHASING..." : "BUY NOW"}
+                      </PixelButton>
                     ) : (
-                      <p className="text-center text-[#94A3B8] text-sm py-2">
-                        Connect wallet to buy
+                      <p className="text-center text-[#94A3B8] text-xs py-2" style={{ fontFamily: "var(--font-mono)" }}>
+                        CONNECT WALLET TO BUY
                       </p>
                     )}
                   </div>
@@ -353,17 +350,18 @@ export default function MarketplacePage() {
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => { setShowListingModal(false); setSelectedTokenId(null); setListingPrice(""); }}
-                  className="flex-1 py-3 rounded-xl bg-[#2D2D44] text-white font-medium hover:bg-[#3D3D54] transition-colors"
+                  className="pixel-btn pixel-btn-secondary"
                 >
-                  Cancel
+                  CANCEL
                 </button>
-                <button
+                <PixelButton
+                  variant="indigo"
                   onClick={handleList}
-                  disabled={!listingPrice || isListing}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-medium hover:opacity-90 transition-all disabled:opacity-50 shadow-lg shadow-indigo-500/25"
+                  disabled={!listingPrice || txPending}
+                  loading={txPending}
                 >
-                  {isListing ? "Updating..." : "Update Price"}
-                </button>
+                  {txPending ? "UPDATING..." : "UPDATE PRICE"}
+                </PixelButton>
               </div>
             </div>
           </div>
@@ -374,11 +372,11 @@ export default function MarketplacePage() {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-[#64748B] text-xs">
             <Link href="/" className="flex items-center gap-2 hover:text-white transition-colors">
-              <Image src="/0xNothing.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
+              <Image src="/0xNothing-by.jpg" alt="0xNothing" width={20} height={20} className="w-5 h-5 rounded-full object-cover" />
               <span>by 0xNothing</span>
             </Link>
           </div>
-          <p className="text-[#4B5563] text-xs">Powered by Ethereum</p>
+          <p className="text-[#4B5563] text-xs">Built on Ethereum</p>
         </div>
       </footer>
     </div>

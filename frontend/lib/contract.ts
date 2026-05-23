@@ -112,16 +112,32 @@ export async function getNFTsForSale() {
 
 export async function getUserNFTs(address: string) {
   const tokenIds = await getMintedTokens(address);
-  const results = await Promise.allSettled(
+  const ownerResults = await Promise.allSettled(
+    tokenIds.map(async (id) => {
+      const owner = await publicClient.readContract({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "ownerOf",
+        args: [id],
+      });
+      return { id, owner: owner as string };
+    })
+  );
+  const dataResults = await Promise.allSettled(
     tokenIds.map(id => getTokenData(id))
   );
-  return results
-    .filter((r): r is PromiseFulfilledResult<TokenData | null> => r.status === "fulfilled")
-    .map((r, i) => ({
-      tokenId: tokenIds[i],
-      data: r.value,
-      imageUrl: r.value ? `data:image/png;base64,${r.value.pixelData}` : "",
-      isForSale: r.value ? r.value.price > 0n : false,
+  return ownerResults
+    .map((r, i) => ({ ownerResult: r, dataResult: dataResults[i], tokenId: tokenIds[i] }))
+    .filter(({ ownerResult }) => ownerResult.status === "fulfilled" && (ownerResult.value as { owner: string }).owner.toLowerCase() === address.toLowerCase())
+    .map(({ dataResult, tokenId }) => ({
+      tokenId,
+      data: (dataResult as PromiseFulfilledResult<TokenData | null>).value,
+      imageUrl: (dataResult as PromiseFulfilledResult<TokenData | null>).value
+        ? `data:image/png;base64,${(dataResult as PromiseFulfilledResult<TokenData | null>).value!.pixelData}`
+        : "",
+      isForSale: (dataResult as PromiseFulfilledResult<TokenData | null>).value
+        ? (dataResult as PromiseFulfilledResult<TokenData | null>).value!.price > 0n
+        : false,
     }))
     .filter(nft => nft.data !== null);
 }

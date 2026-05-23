@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import { encodeFunctionData } from "viem";
 import { PixelNFTABI } from "@/lib/abi";
+import { PixelButton } from "@/components/PixelButton";
 
 interface MintPanelProps {
   pixelData: string[][];
@@ -33,7 +34,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
 
   const hasDrawing = pixelData.some(row => row.some(cell => cell !== "transparent"));
 
-  const generatePixelArt = (): string => {
+  const generatePixelArt = useCallback((): string => {
     if (typeof document === "undefined") return "";
     const OUTPUT_SIZE = 512;
     const canvas = document.createElement("canvas");
@@ -58,10 +59,15 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     }
 
     return canvas.toDataURL("image/png").split(",")[1];
-  };
+  }, [pixelData, gridSize]);
 
-  const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
-  const pixelDataBase64 = hasDrawing ? generatePixelArt() : "";
+  const pixelDataBase64 = useMemo(() => {
+    if (!hasDrawing) return "";
+    return generatePixelArt();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasDrawing]);
+
+  const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` | undefined;
 
   const { data: isOriginal, isLoading: isCheckingOriginal } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -131,12 +137,13 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
         onMintSuccess(BigInt(0));
       }
     } catch (err: unknown) {
-      const error = err as Error;
+      const error = err as { shortMessage?: string; message?: string; details?: string };
+      const msg = error.shortMessage || error.message || error.details || "";
       console.error("Mint error:", err);
-      if (error.message?.includes("already minted")) {
+      if (msg.includes("already minted")) {
         setError("This artwork has already been minted!");
       } else {
-        setError("Failed to mint. Please try again.");
+        setError(msg || "Failed to mint. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -147,7 +154,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
 
   if (!mounted) {
     return (
-      <div className="bg-[#13131F] rounded-2xl p-4 space-y-4 border border-white/5">
+      <div className="bg-[var(--surface)] rounded-2xl p-4 space-y-4 border border-[var(--border)]">
         <div className="space-y-3">
           <div className="h-9 bg-white/5 rounded-xl animate-pulse" />
           <div className="h-16 bg-white/5 rounded-xl animate-pulse" />
@@ -158,17 +165,17 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
   }
 
   return (
-    <div className="bg-[#13131F] rounded-2xl p-4 space-y-4 border border-white/5">
+    <div className="bg-[var(--surface)] rounded-2xl p-4 space-y-4 border border-[var(--border)]">
       {/* Not connected */}
       {!isConnected ? (
         <div className="flex items-center gap-3 py-1">
           <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-            <svg width="18" height="18" fill="none" stroke="#6366F1" strokeWidth="1.5" viewBox="0 0 24 24">
+            <svg width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="1.5" viewBox="0 0 24 24">
               <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7" />
               <path d="M16 16l2 2 4-4" />
             </svg>
           </div>
-          <p className="text-[#64748B] text-sm">Connect wallet to mint</p>
+          <p className="text-[var(--muted)] text-sm">Connect wallet to mint</p>
         </div>
       ) : (
         <>
@@ -180,7 +187,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
               onChange={(e) => setName(e.target.value.slice(0, 32))}
               placeholder="Artwork name"
               maxLength={32}
-              className="w-full bg-white/5 border border-white/5 rounded-xl px-3.5 py-2.5 text-white placeholder-[#4B5563] focus:outline-none focus:border-indigo-500/40 transition-all text-sm"
+              className="w-full bg-white/5 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-white placeholder-[var(--muted-dark)] focus:outline-none focus:border-indigo-500/40 transition-all text-sm"
             />
           </div>
 
@@ -191,26 +198,26 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
             placeholder="Description (optional)"
             maxLength={256}
             rows={2}
-            className="w-full bg-white/5 border border-white/5 rounded-xl px-3.5 py-2.5 text-white placeholder-[#4B5563] focus:outline-none focus:border-indigo-500/40 transition-all resize-none text-sm"
+            className="w-full bg-white/5 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-white placeholder-[var(--muted-dark)] focus:outline-none focus:border-indigo-500/40 transition-all resize-none text-sm"
           />
 
           {/* Originality */}
           {hasDrawing && (
             <div className="rounded-xl px-3 py-2.5 border text-xs font-medium">
               {isCheckingOriginal ? (
-                <span className="text-[#64748B] flex items-center gap-1.5">
+                <span className="text-[var(--muted)] flex items-center gap-1.5">
                   <span className="w-3 h-3 border border-indigo-500/40 border-t-indigo-500 rounded-full animate-spin" />
                   Checking...
                 </span>
               ) : isOriginal === false ? (
-                <span className="text-red-400/80 flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5" style={{ color: "rgba(239,68,68,0.8)" }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   Already minted
                 </span>
               ) : (
-                <span className="text-emerald-400/80 flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5" style={{ color: "rgba(16,185,129,0.8)" }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -222,25 +229,26 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
 
           {/* Error */}
           {error && (
-            <div className="p-2.5 bg-red-500/5 rounded-xl border border-red-500/10 flex items-center gap-2">
-              <svg className="w-3.5 h-3.5 text-red-400/70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="p-2.5 rounded-xl border flex items-center gap-2" style={{ background: "rgba(239,68,68,0.05)", borderColor: "rgba(239,68,68,0.1)" }}>
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="rgba(248,113,113,0.7)" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-red-400/80 text-xs">{error}</p>
+              <p className="text-xs" style={{ color: "rgba(248,113,113,0.8)" }}>{error}</p>
             </div>
           )}
 
           {/* Success */}
           {txHash && (
-            <div className="p-2.5 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-              <p className="text-emerald-400/80 text-xs font-medium mb-1">
+            <div className="p-2.5 rounded-xl border" style={{ background: "rgba(16,185,129,0.05)", borderColor: "rgba(16,185,129,0.1)" }}>
+              <p className="text-xs font-medium mb-1" style={{ color: "rgba(16,185,129,0.8)" }}>
                 {isConfirmed ? "Minted successfully!" : isConfirming ? "Waiting for confirmation..." : "Transaction submitted"}
               </p>
               <a
                 href={`https://etherscan.io/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-indigo-400/70 text-[11px] hover:underline flex items-center gap-1"
+                className="text-[11px] hover:underline flex items-center gap-1"
+                style={{ color: "rgba(99,102,241,0.7)" }}
               >
                 View on Etherscan
                 <svg width="9" height="9" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -253,37 +261,23 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
           )}
 
           {/* Mint button */}
-          <button
+          <PixelButton
+            variant="indigo"
             onClick={handleMint}
             disabled={!canMint}
-            className={`w-full py-2.5 rounded-xl font-medium text-sm transition-all duration-150 flex items-center justify-center gap-2 ${
-              !canMint
-                ? "bg-white/5 text-[#4B5563] cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-500 text-white"
-            }`}
+            loading={isLoading || isConfirming || isCheckingOriginal}
           >
-            {isLoading || isConfirming || isCheckingOriginal ? (
+            {isConfirming ? "CONFIRMING..." : isCheckingOriginal ? "CHECKING..." : isOriginal === false ? "ALREADY MINTED" : !hasDrawing ? "DRAW FIRST" : !name.trim() ? "ENTER NAME" : (
               <>
-                <span className="w-3.5 h-3.5 border border-white/40 border-t-white rounded-full animate-spin" />
-                {isConfirming ? "Confirming..." : "Processing..."}
-              </>
-            ) : isOriginal === false ? (
-              "Already minted"
-            ) : !hasDrawing ? (
-              "Draw something first"
-            ) : !name.trim() ? (
-              "Enter a name"
-            ) : (
-              <>
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" style={{ display: "inline", verticalAlign: "middle", marginRight: 5 }}>
                   <path d="M12 2L2 7l10 5 10-5-10-5z" />
                   <path d="M2 17l10 5 10-5" />
                   <path d="M2 12l10 5 10-5" />
                 </svg>
-                Mint NFT
+                MINT NFT
               </>
             )}
-          </button>
+          </PixelButton>
         </>
       )}
     </div>

@@ -6,22 +6,24 @@ import { Providers } from "./providers";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  display: "swap",
+  display: "block",
+  preload: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-  display: "swap",
+  display: "block",
+  preload: true,
 });
 
 export const metadata: Metadata = {
   title: "0xNothing",
   description: "A creative space on Ethereum. Explore pixel art NFTs and more.",
   icons: {
-    icon: { url: "/icon.svg", type: "image/svg+xml" },
+    icon: { url: "/favicon.svg", type: "image/svg+xml" },
     other: [
-      { url: "/icon.svg", rel: "alternate icon", type: "image/svg+xml" },
+      { url: "/favicon.svg", rel: "alternate icon", type: "image/svg+xml" },
     ],
   },
 };
@@ -32,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
       </body>
