@@ -208,7 +208,7 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
     if (tool === "fill") {
       isDrawingRef.current = false;
       floodFill(gridX, gridY, selectedColorRef.current);
-      if (onStrokeStart) onStrokeStart(strokeSnapshotRef.current);
+      if (onStrokeStart) onStrokeStart(pixelDataRef.current);
       return;
     }
 
