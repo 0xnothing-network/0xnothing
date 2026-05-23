@@ -201,14 +201,14 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
     if (tool === "pencil" || tool === "eraser") {
       if (!strokeSnapshotRef.current) {
         strokeSnapshotRef.current = pixelDataRef.current.map(row => [...row]);
-        if (onStrokeStart) onStrokeStart();
+        if (onStrokeStart) onStrokeStart(strokeSnapshotRef.current);
       }
     }
 
     if (tool === "fill") {
       isDrawingRef.current = false;
       floodFill(gridX, gridY, selectedColorRef.current);
-      if (onStrokeStart) onStrokeStart();
+      if (onStrokeStart) onStrokeStart(strokeSnapshotRef.current);
       return;
     }
 
