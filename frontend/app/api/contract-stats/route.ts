@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const CONTRACT = "0x7bE3B9035AAAcB57b6634eCBa65402e37E30Bf66";
+const CONTRACT = "0x8693f17185F3C295edfD2aDC715f20290A5D538D";
 const ETHERSCAN_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 
 export async function GET() {
