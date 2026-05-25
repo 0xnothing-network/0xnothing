@@ -9,26 +9,29 @@ export async function GET() {
   }
 
   try {
-    const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${CONTRACT}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${ETHERSCAN_KEY}`;
-    const res = await fetch(url, { next: { revalidate: 60 } });
-    const json = await res.json();
+    // Get contract balance (this is what treasury collects)
+    const balanceUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=balance&address=${CONTRACT}&tag=latest&apikey=${ETHERSCAN_KEY}`;
+    const balanceRes = await fetch(balanceUrl, { next: { revalidate: 60 } });
+    const balanceJson = await balanceRes.json();
 
-    if (json.status !== "1" || !json.result || !Array.isArray(json.result)) {
-      return NextResponse.json({ totalFees: "0", txCount: 0 });
+    // Get transaction count
+    const txUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${CONTRACT}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${ETHERSCAN_KEY}`;
+    const txRes = await fetch(txUrl, { next: { revalidate: 60 } });
+    const txJson = await txRes.json();
+
+    let txCount = 0;
+    if (txJson.status === "1" && Array.isArray(txJson.result)) {
+      txCount = txJson.result.filter((tx: { isError: string }) => tx.isError === "0").length;
     }
 
-    const txs = json.result as Array<{ gasUsed: string; gasPrice: string; isError: string }>;
-    const successfulTxs = txs.filter((tx) => tx.isError === "0");
-
-    let totalFees = 0n;
-    for (const tx of successfulTxs) {
-      totalFees += BigInt(tx.gasUsed) * BigInt(tx.gasPrice);
+    let totalFees = "0";
+    if (balanceJson.status === "1" && balanceJson.result) {
+      const balanceWei = BigInt(balanceJson.result);
+      const eth = Number(balanceWei) / 1e18;
+      totalFees = eth < 0.0001 ? "< 0.0001" : eth.toFixed(4);
     }
 
-    const eth = Number(totalFees) / 1e18;
-    const formatted = eth < 0.0001 ? "< 0.0001" : eth.toFixed(4);
-
-    return NextResponse.json({ totalFees: formatted, txCount: successfulTxs.length });
+    return NextResponse.json({ totalFees, txCount });
   } catch {
     return NextResponse.json({ totalFees: "0", txCount: 0 });
   }
