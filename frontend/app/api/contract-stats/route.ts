@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { publicClient, getContractAddress } from "@/lib/contract";
-import { PixelNFTABI } from "@/lib/abi";
+import { getContractAddress } from "@/lib/contract";
 
 const ETHERSCAN_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 
@@ -10,38 +9,30 @@ export async function GET() {
   }
 
   try {
-    const contractAddress = getContractAddress() as `0x${string}`;
+    const contractAddress = getContractAddress();
 
-    // Get treasury address from contract
-    const treasury = await publicClient.readContract({
-      address: contractAddress,
-      abi: PixelNFTABI,
-      functionName: "treasury",
-    }) as string;
+    // Get all transactions to calculate gas fees burned
+    const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${ETHERSCAN_KEY}`;
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    const json = await res.json();
 
-    // Get treasury balance
-    const balanceUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=balance&address=${treasury}&tag=latest&apikey=${ETHERSCAN_KEY}`;
-    const balanceRes = await fetch(balanceUrl, { next: { revalidate: 60 } });
-    const balanceJson = await balanceRes.json();
-
-    // Get transaction count
-    const txUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${ETHERSCAN_KEY}`;
-    const txRes = await fetch(txUrl, { next: { revalidate: 60 } });
-    const txJson = await txRes.json();
-
+    let totalFees = 0n;
     let txCount = 0;
-    if (txJson.status === "1" && Array.isArray(txJson.result)) {
-      txCount = txJson.result.filter((tx: { isError: string }) => tx.isError === "0").length;
+
+    if (json.status === "1" && Array.isArray(json.result)) {
+      const txs = json.result as Array<{ gasUsed: string; gasPrice: string; isError: string }>;
+      const successfulTxs = txs.filter((tx) => tx.isError === "0");
+
+      for (const tx of successfulTxs) {
+        totalFees += BigInt(tx.gasUsed) * BigInt(tx.gasPrice);
+        txCount++;
+      }
     }
 
-    let totalFees = "0";
-    if (balanceJson.status === "1" && balanceJson.result) {
-      const balanceWei = BigInt(balanceJson.result);
-      const eth = Number(balanceWei) / 1e18;
-      totalFees = eth < 0.0001 ? "< 0.0001" : eth.toFixed(4);
-    }
+    const eth = Number(totalFees) / 1e18;
+    const formatted = eth < 0.0001 ? "< 0.0001" : eth.toFixed(4);
 
-    return NextResponse.json({ totalFees, txCount });
+    return NextResponse.json({ totalFees: formatted, txCount });
   } catch {
     return NextResponse.json({ totalFees: "0", txCount: 0 });
   }
