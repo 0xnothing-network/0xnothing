@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { publicClient, getContractAddress } from "@/lib/contract";
+import { PixelNFTABI } from "@/lib/abi";
 
-const CONTRACT = "0x8693f17185F3C295edfD2aDC715f20290A5D538D";
 const ETHERSCAN_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY;
 
 export async function GET() {
@@ -9,13 +10,22 @@ export async function GET() {
   }
 
   try {
-    // Get contract balance (this is what treasury collects)
-    const balanceUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=balance&address=${CONTRACT}&tag=latest&apikey=${ETHERSCAN_KEY}`;
+    const contractAddress = getContractAddress() as `0x${string}`;
+
+    // Get treasury address from contract
+    const treasury = await publicClient.readContract({
+      address: contractAddress,
+      abi: PixelNFTABI,
+      functionName: "treasury",
+    }) as string;
+
+    // Get treasury balance
+    const balanceUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=balance&address=${treasury}&tag=latest&apikey=${ETHERSCAN_KEY}`;
     const balanceRes = await fetch(balanceUrl, { next: { revalidate: 60 } });
     const balanceJson = await balanceRes.json();
 
     // Get transaction count
-    const txUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${CONTRACT}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${ETHERSCAN_KEY}`;
+    const txUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${contractAddress}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc&apikey=${ETHERSCAN_KEY}`;
     const txRes = await fetch(txUrl, { next: { revalidate: 60 } });
     const txJson = await txRes.json();
 
