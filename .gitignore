@@ -26,3 +26,9 @@ credentials.*
 
 # debug
 *.log
+
+# secrets & sensitive data
+**/secrets/
+**/private/
+**/*.secret
+**/*.private

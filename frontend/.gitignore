@@ -53,3 +53,9 @@ contracts/node_modules/
 *.bak
 *.key
 credentials.*
+
+# secrets & sensitive data
+**/secrets/
+**/private/
+**/*.secret
+**/*.private
