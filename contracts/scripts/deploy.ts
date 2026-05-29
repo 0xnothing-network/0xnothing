@@ -3,24 +3,21 @@ import { ethers } from "hardhat";
 async function main() {
   console.log("Deploying 0xPixel contract...");
 
-  const ADMIN_ADDRESS = process.env.ADMIN_ADDRESS;
-  const TREASURY_ADDRESS = process.env.TREASURY_ADDRESS;
-  if (!ADMIN_ADDRESS || !TREASURY_ADDRESS) {
-    throw new Error("ADMIN_ADDRESS and TREASURY_ADDRESS must be set in .env");
+  const DEV_WALLET_ADDRESS = process.env.DEV_WALLET_ADDRESS;
+  if (!DEV_WALLET_ADDRESS) {
+    throw new Error("DEV_WALLET_ADDRESS must be set in .env");
   }
 
-  const admin = ethers.getAddress(ADMIN_ADDRESS);
-  const treasury = ethers.getAddress(TREASURY_ADDRESS);
+  const devWallet = ethers.getAddress(DEV_WALLET_ADDRESS);
 
   const ZeroxPixel = await ethers.getContractFactory("ZeroxPixel");
-  const zeroxPixel = await ZeroxPixel.deploy(admin, treasury);
+  const zeroxPixel = await ZeroxPixel.deploy(devWallet);
 
   await zeroxPixel.waitForDeployment();
   const contractAddress = await zeroxPixel.getAddress();
 
   console.log(`0xPixel deployed to: ${contractAddress}`);
-  console.log(`Admin: ${admin}`);
-  console.log(`Treasury: ${treasury}`);
+  console.log(`DevWallet: ${devWallet}`);
   console.log(`Network: ${(await ethers.provider.getNetwork()).chainId}`);
 
   const fs = require("fs");

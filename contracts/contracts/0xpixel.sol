@@ -5,13 +5,11 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-contract ZeroxPixel is ERC721, ReentrancyGuard {
+contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
     uint256 private _tokenIds;
-    address payable public treasury;
-    address public admin;
-    uint256 public constant FEE_PERCENT = 5;
-    uint256 public constant MAX_PRICE = 100 ether;
+    address payable public immutable devWallet;
 
     struct PixelArt {
         string name;
@@ -22,6 +20,7 @@ contract ZeroxPixel is ERC721, ReentrancyGuard {
         address creator;
         uint256 mintedAt;
         bytes32 artworkHash;
+        uint256 score;
     }
 
     mapping(uint256 => PixelArt) public tokenData;
@@ -29,226 +28,202 @@ contract ZeroxPixel is ERC721, ReentrancyGuard {
     mapping(bytes32 => uint256) public artworkRegistry;
     mapping(uint256 => bool) public isTokenListed;
     uint256[] public listedTokens;
-    mapping(address => uint256) public pendingRefunds;
+    mapping(uint256 => uint256) public listedIndex;
+    mapping(uint256 => uint256) public userTokenIndex;
+    mapping(address => uint256) public pendingWithdrawals;
 
-    event PixelArtMinted(address indexed minter, uint256 tokenId, string name);
-    event NFTListed(uint256 indexed tokenId, uint256 price);
-    event NFTDelisted(uint256 indexed tokenId);
-    event NFTBought(uint256 indexed tokenId, address indexed buyer, address indexed seller, uint256 price);
+    event Minted(address indexed, uint256 indexed, string);
+    event Listed(uint256 indexed, uint256);
+    event Delisted(uint256 indexed);
+    event Sold(uint256 indexed, address indexed, address indexed, uint256);
+    event Withdrawn(address indexed, uint256);
 
-    constructor(address _admin, address payable _treasury) ERC721("0xPixel", "0xP") {
-        require(_admin != address(0), "Invalid admin");
-        require(_treasury != address(0), "Invalid treasury");
-        admin = _admin;
-        treasury = _treasury;
+    constructor(address payable _devWallet) ERC721("0xPixel", "0xP") {
+        require(_devWallet != address(0), "Zero dev wallet");
+        devWallet = _devWallet;
     }
 
     receive() external payable {}
 
-    function withdraw() external {
-        require(msg.sender == admin, "Only admin");
-        uint256 balance = address(this).balance;
-        require(balance > 0, "Nothing to withdraw");
-        payable(admin).transfer(balance);
+    function supportsInterface(bytes4 id) public view override(ERC721, IERC165) returns (bool) {
+        return id == type(IERC2981).interfaceId || super.supportsInterface(id);
     }
 
-    function withdrawRefunds(address payable recipient) external {
-        require(msg.sender == admin, "Only admin");
-        uint256 refund = pendingRefunds[recipient];
-        require(refund > 0, "No pending refund");
-        pendingRefunds[recipient] = 0;
-        recipient.transfer(refund);
+    function royaltyInfo(uint256 tokenId, uint256 salePrice) external view returns (address, uint256) {
+        require(_ownerOf(tokenId) != address(0), "Token not exist");
+        return (tokenData[tokenId].creator, (salePrice * 25) / 1000);
     }
 
-    function mint(
-        string memory name,
-        string memory description,
-        uint256 gridSize,
-        string memory pixelData
-    ) external nonReentrant returns (uint256) {
-        require(bytes(name).length > 0 && bytes(name).length <= 32, "Name must be 1-32 chars");
-        require(gridSize == 8 || gridSize == 16 || gridSize == 32 || gridSize == 64, "Invalid grid size");
-        require(bytes(pixelData).length > 0, "Pixel data required");
-        
-        bytes32 artworkHash = keccak256(abi.encodePacked(pixelData, gridSize));
-        require(artworkRegistry[artworkHash] == 0, "Artwork already minted");
-        
+    function withdrawPending() external nonReentrant {
+        uint256 amt = pendingWithdrawals[msg.sender];
+        require(amt != 0, "No pending");
+        delete pendingWithdrawals[msg.sender];
+        _safeSend(payable(msg.sender), amt);
+        emit Withdrawn(msg.sender, amt);
+    }
+
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
+        address from = _ownerOf(tokenId);
+
+        if (from != address(0)) {
+            uint256 idx = userTokenIndex[tokenId];
+            uint256[] storage fromTokens = userTokens[from];
+            uint256 last = fromTokens[fromTokens.length - 1];
+            fromTokens[idx] = last;
+            userTokenIndex[last] = idx;
+            fromTokens.pop();
+            delete userTokenIndex[tokenId];
+        }
+
+        if (to != address(0)) {
+            userTokens[to].push(tokenId);
+            userTokenIndex[tokenId] = userTokens[to].length - 1;
+        }
+
+        if (from != address(0) && isTokenListed[tokenId]) {
+            delete tokenData[tokenId].price;
+            delete isTokenListed[tokenId];
+            _rmListed(tokenId);
+        }
+
+        return super._update(to, tokenId, auth);
+    }
+
+    function mint(string calldata name, string calldata desc, uint256 grid, string calldata px) external nonReentrant returns (uint256) {
+        require(bytes(name).length != 0 && bytes(name).length <= 32, "Invalid name");
+        require(bytes(desc).length <= 256, "Desc too long");
+        require(grid == 8 || grid == 16 || grid == 32 || grid == 64 || grid == 128, "Invalid grid");
+        require(bytes(px).length != 0 && bytes(px).length <= 50000, "Invalid px");
+
+        bytes32 h = keccak256(abi.encodePacked(px, grid));
+        require(artworkRegistry[h] == 0, "Artwork exists");
+
         _tokenIds++;
-        uint256 newTokenId = _tokenIds;
-        
-        _safeMint(msg.sender, newTokenId);
-        
-        tokenData[newTokenId] = PixelArt({
-            name: name,
-            description: description,
-            gridSize: gridSize,
-            pixelData: pixelData,
-            price: 0,
-            creator: msg.sender,
-            mintedAt: block.timestamp,
-            artworkHash: artworkHash
-        });
-        
-        artworkRegistry[artworkHash] = newTokenId;
-        userTokens[msg.sender].push(newTokenId);
-        
-        emit PixelArtMinted(msg.sender, newTokenId, name);
-        
-        return newTokenId;
-    }
-    
-    function isOriginal(bytes32 artworkHash) external view returns (bool) {
-        return artworkRegistry[artworkHash] == 0;
-    }
-    
-    function checkOriginality(string memory pixelData, uint256 gridSize) external view returns (bool) {
-        bytes32 artworkHash = keccak256(abi.encodePacked(pixelData, gridSize));
-        return artworkRegistry[artworkHash] == 0;
-    }
-    
-    function getOriginalCreator(string memory pixelData, uint256 gridSize) external view returns (address) {
-        bytes32 artworkHash = keccak256(abi.encodePacked(pixelData, gridSize));
-        uint256 existingTokenId = artworkRegistry[artworkHash];
-        if (existingTokenId == 0) return address(0);
-        return tokenData[existingTokenId].creator;
-    }
-    
-    function listForSale(uint256 tokenId, uint256 priceInWei) external {
-        require(ownerOf(tokenId) == msg.sender, "Not your token");
-        require(priceInWei > 0, "Price must be <= 100 ETH");
-        require(priceInWei <= MAX_PRICE, "Price too high");
-        require(tokenData[tokenId].price == 0, "Already listed");
+        uint256 id = _tokenIds;
+        _safeMint(msg.sender, id);
 
-        tokenData[tokenId].price = priceInWei;
-        isTokenListed[tokenId] = true;
-        listedTokens.push(tokenId);
-        
-        emit NFTListed(tokenId, priceInWei);
+        tokenData[id].name = name;
+        tokenData[id].description = desc;
+        tokenData[id].gridSize = grid;
+        tokenData[id].pixelData = px;
+        tokenData[id].creator = msg.sender;
+        tokenData[id].mintedAt = block.timestamp;
+        tokenData[id].artworkHash = h;
+
+        artworkRegistry[h] = id;
+        emit Minted(msg.sender, id, name);
+        return id;
     }
 
-    function delist(uint256 tokenId) external {
-        require(ownerOf(tokenId) == msg.sender, "Not your token");
-        require(tokenData[tokenId].price > 0, "Not listed");
-
-        tokenData[tokenId].price = 0;
-        isTokenListed[tokenId] = false;
-        
-        _removeFromListedTokens(tokenId);
-        
-        emit NFTDelisted(tokenId);
+    function checkOriginal(string calldata px, uint256 grid) external view returns (bool) {
+        return artworkRegistry[keccak256(abi.encodePacked(px, grid))] == 0;
     }
-    
-    function buyNFT(uint256 tokenId) external payable nonReentrant {
-        require(tokenData[tokenId].price > 0, "Not for sale");
-        require(msg.value >= tokenData[tokenId].price, "Insufficient payment");
 
-        address seller = ownerOf(tokenId);
-        uint256 price = tokenData[tokenId].price;
-        uint256 fee = (price * FEE_PERCENT) / 100;
-        uint256 sellerAmount = price - fee;
+    function getCreator(string calldata px, uint256 grid) external view returns (address) {
+        bytes32 h = keccak256(abi.encodePacked(px, grid));
+        uint256 id = artworkRegistry[h];
+        return id == 0 ? address(0) : tokenData[id].creator;
+    }
 
-        // CEI Pattern: Clear state BEFORE external calls
-        tokenData[tokenId].price = 0;
-        isTokenListed[tokenId] = false;
-        _removeFromListedTokens(tokenId);
+    function listForSale(uint256 id, uint256 price) external nonReentrant {
+        require(_ownerOf(id) == msg.sender, "Not owner");
+        require(price != 0, "Zero price");
+        require(!isTokenListed[id], "Already listed");
+        require(price <= 1000 ether, "Price too high");
 
-        // Update ownership tracking before transfer
-        _removeTokenFromUser(seller, tokenId);
-        userTokens[msg.sender].push(tokenId);
+        tokenData[id].price = price;
+        isTokenListed[id] = true;
+        listedTokens.push(id);
+        listedIndex[id] = listedTokens.length - 1;
+        emit Listed(id, price);
+    }
 
-        // Transfer NFT first (CEI: Effects before Interactions)
-        _transfer(seller, msg.sender, tokenId);
+    function delist(uint256 id) external nonReentrant {
+        require(_ownerOf(id) == msg.sender, "Not owner");
+        require(isTokenListed[id], "Not listed");
 
-        // Then do external calls (Interactions)
-        (bool feeSent, ) = treasury.call{value: fee}("");
-        require(feeSent, "Failed to send fee to treasury");
+        delete tokenData[id].price;
+        delete isTokenListed[id];
+        _rmListed(id);
+        emit Delisted(id);
+    }
 
-        (bool sentToSeller, ) = payable(seller).call{value: sellerAmount}("");
-        require(sentToSeller, "Failed to send to seller");
+    function buyNFT(uint256 id) external payable nonReentrant {
+        require(isTokenListed[id], "Not listed");
+        require(msg.value >= tokenData[id].price, "Insufficient payment");
+        require(msg.sender != _ownerOf(id), "Cannot buy own");
 
-        // Refund excess
+        address seller = _ownerOf(id);
+        address origCreator = tokenData[id].creator;
+        uint256 price = tokenData[id].price;
+        uint256 devFee = (price * 25) / 1000;
+        uint256 sellerAmt = price - devFee;
+
+        delete tokenData[id].price;
+        delete isTokenListed[id];
+        _rmListed(id);
+        ++tokenData[id].score;
+        _transfer(seller, msg.sender, id);
+
+        if (seller != origCreator) {
+            uint256 royalty = (price * 25) / 1000;
+            sellerAmt -= royalty;
+            pendingWithdrawals[origCreator] += royalty;
+        }
+
+        pendingWithdrawals[devWallet] += devFee;
+        pendingWithdrawals[seller] += sellerAmt;
+
         if (msg.value > price) {
-            uint256 refund = msg.value - price;
-            (bool refundSent, ) = payable(msg.sender).call{value: refund}("");
-            require(refundSent, "Failed to refund");
+            _safeSend(payable(msg.sender), msg.value - price);
         }
-
-        emit NFTBought(tokenId, msg.sender, seller, price);
-    }
-    
-    function getPrice(uint256 tokenId) external view returns (uint256) {
-        return tokenData[tokenId].price;
-    }
-    
-    function getNFTsForSale() external view returns (uint256[] memory) {
-        return listedTokens;
+        emit Sold(id, msg.sender, seller, price);
     }
 
-    function getListedTokensCount() external view returns (uint256) {
-        return listedTokens.length;
+    function getScore(uint256 id) external view returns (uint256) {
+        return tokenData[id].score;
     }
-    
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(ownerOf(tokenId) != address(0), "Token does not exist");
-        
-        PixelArt memory art = tokenData[tokenId];
-        
-        string memory json = string(abi.encodePacked(
-            '{"name":"', art.name, '",',
-            '"description":"', art.description, '",',
-            '"image":"data:image/png;base64,', art.pixelData, '",',
-            '"attributes":[{"trait_type":"Grid Size","value":"', 
-            Strings.toString(art.gridSize), '"},',
-            '{"trait_type":"Creator","value":"', Strings.toHexString(uint160(art.creator), 20), '"},',
-            '{"trait_type":"Minted At","value":"', Strings.toString(art.mintedAt), '"}]}'
+
+    function tokenURI(uint256 id) public view override returns (string memory) {
+        require(_ownerOf(id) != address(0), "Token not exist");
+        PixelArt storage art = tokenData[id];
+        string memory scoreStr = Strings.toString(art.score);
+        string memory gridStr = Strings.toString(art.gridSize);
+        string memory creatorStr = Strings.toHexString(uint160(art.creator), 20);
+        string memory json = string(bytes.concat(
+            '{"name":"', bytes(art.name),
+            '","description":"', bytes(art.description),
+            '","image":"data:image/png;base64,', bytes(art.pixelData),
+            '","attributes":[',
+            '{"trait_type":"Grid Size","value":"', bytes(gridStr), '"}',
+            ',{"trait_type":"Creator","value":"', bytes(creatorStr), '"}',
+            ',{"trait_type":"Score","display_type":"number","value":', bytes(scoreStr), "}]}"
         ));
-        
-        return string(abi.encodePacked(
-            "data:application/json;base64,",
-            Base64.encode(bytes(json))
-        ));
-    }
-    
-    function getMintedTokens(address owner) external view returns (uint256[] memory) {
-        return userTokens[owner];
-    }
-    
-    function getTokenData(uint256 tokenId) external view returns (PixelArt memory) {
-        require(ownerOf(tokenId) != address(0), "Token does not exist");
-        return tokenData[tokenId];
-    }
-    
-    function transfer(address to, uint256 tokenId) external {
-        require(to != address(0), "Cannot transfer to zero address");
-        require(msg.sender == ownerOf(tokenId), "Not your token");
-        require(tokenData[tokenId].price == 0, "Cannot transfer listed NFT");
-
-        _removeTokenFromUser(msg.sender, tokenId);
-        userTokens[to].push(tokenId);
-        _transfer(msg.sender, to, tokenId);
+        return string(bytes.concat("data:application/json;base64,", bytes(Base64.encode(bytes(json)))));
     }
 
-    // Internal helpers
-    function _removeFromListedTokens(uint256 tokenId) internal {
+    function transferNFT(address to, uint256 id) external nonReentrant {
+        require(to != address(0), "Zero address");
+        require(msg.sender == _ownerOf(id), "Not owner");
+        require(!isTokenListed[id], "Listed");
+        _transfer(msg.sender, to, id);
+    }
+
+    function _safeSend(address payable to, uint256 amt) internal {
+        (bool ok,) = to.call{value: amt}("");
+        require(ok, "Send failed");
+    }
+
+    function _rmListed(uint256 id) internal {
         uint256 len = listedTokens.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (listedTokens[i] == tokenId) {
-                listedTokens[i] = listedTokens[len - 1];
-                listedTokens.pop();
-                break;
-            }
+        if (len == 0) return;
+        uint256 idx = listedIndex[id];
+        uint256 last = listedTokens[len - 1];
+        if (idx != len - 1) {
+            listedTokens[idx] = last;
+            listedIndex[last] = idx;
         }
-    }
-
-    function _removeTokenFromUser(address user, uint256 tokenId) internal {
-        uint256[] storage tokens = userTokens[user];
-        uint256 len = tokens.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (tokens[i] == tokenId) {
-                tokens[i] = tokens[len - 1];
-                tokens.pop();
-                break;
-            }
-        }
+        listedTokens.pop();
+        delete listedIndex[id];
     }
 }

@@ -1,138 +1,153 @@
 export const PixelNFTABI = [
   {
-    "inputs": [{ "name": "_treasury", "type": "address" }],
+    "inputs": [{ "name": "_devWallet", "type": "address" }],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "from", "type": "address" },
-      { "indexed": true, "name": "to", "type": "address" },
-      { "indexed": true, "name": "tokenId", "type": "uint256" }
+      { "indexed": true, "name": "", "type": "address" },
+      { "indexed": true, "name": "", "type": "uint256" },
+      { "indexed": false, "name": "", "type": "string" }
     ],
-    "name": "Transfer",
+    "name": "Minted",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "minter", "type": "address" },
-      { "indexed": false, "name": "tokenId", "type": "uint256" },
-      { "indexed": false, "name": "name", "type": "string" }
+      { "indexed": true, "name": "", "type": "uint256" },
+      { "indexed": false, "name": "", "type": "uint256" }
     ],
-    "name": "PixelArtMinted",
+    "name": "Listed",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "tokenId", "type": "uint256" },
-      { "indexed": false, "name": "price", "type": "uint256" }
+      { "indexed": true, "name": "", "type": "uint256" }
     ],
-    "name": "NFTListed",
+    "name": "Delisted",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "tokenId", "type": "uint256" }
+      { "indexed": true, "name": "", "type": "uint256" },
+      { "indexed": true, "name": "", "type": "address" },
+      { "indexed": true, "name": "", "type": "address" },
+      { "indexed": false, "name": "", "type": "uint256" }
     ],
-    "name": "NFTDelisted",
+    "name": "Sold",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "tokenId", "type": "uint256" },
-      { "indexed": true, "name": "buyer", "type": "address" },
-      { "indexed": true, "name": "seller", "type": "address" },
-      { "indexed": false, "name": "price", "type": "uint256" }
+      { "indexed": true, "name": "", "type": "address" },
+      { "indexed": false, "name": "", "type": "uint256" }
     ],
-    "name": "NFTBought",
+    "name": "Withdrawn",
     "type": "event"
   },
   {
     "inputs": [],
-    "name": "treasury",
+    "name": "devWallet",
     "outputs": [{ "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "FEE_PERCENT",
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "name": "owner", "type": "address" }],
-    "name": "getMintedTokens",
-    "outputs": [{ "type": "uint256[]", "name": "" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "name": "tokenId", "type": "uint256" }],
-    "name": "getTokenData",
+    "inputs": [{ "name": "", "type": "uint256" }],
+    "name": "tokenData",
     "outputs": [
-      {
-        "components": [
-          { "name": "name", "type": "string" },
-          { "name": "description", "type": "string" },
-          { "name": "gridSize", "type": "uint256" },
-          { "name": "pixelData", "type": "string" },
-          { "name": "price", "type": "uint256" },
-          { "name": "creator", "type": "address" },
-          { "name": "mintedAt", "type": "uint256" },
-          { "name": "artworkHash", "type": "bytes32" }
-        ],
-        "name": "",
-        "type": "tuple"
-      }
+      { "name": "name", "type": "string" },
+      { "name": "description", "type": "string" },
+      { "name": "gridSize", "type": "uint256" },
+      { "name": "pixelData", "type": "string" },
+      { "name": "price", "type": "uint256" },
+      { "name": "creator", "type": "address" },
+      { "name": "mintedAt", "type": "uint256" },
+      { "name": "artworkHash", "type": "bytes32" },
+      { "name": "score", "type": "uint256" }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [{ "name": "artworkHash", "type": "bytes32" }],
-    "name": "isOriginal",
+    "inputs": [{ "name": "", "type": "address" }],
+    "name": "userTokens",
+    "outputs": [{ "name": "", "type": "uint256[]" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "", "type": "bytes32" }],
+    "name": "artworkRegistry",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "", "type": "uint256" }],
+    "name": "isTokenListed",
     "outputs": [{ "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "listedTokens",
+    "outputs": [{ "name": "", "type": "uint256[]" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "", "type": "uint256" }],
+    "name": "listedIndex",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "", "type": "uint256" }],
+    "name": "userTokenIndex",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "", "type": "address" }],
+    "name": "pendingWithdrawals",
+    "outputs": [{ "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
       { "name": "pixelData", "type": "string" },
-      { "name": "gridSize", "type": "uint256" }
+      { "name": "grid", "type": "uint256" }
     ],
-    "name": "checkOriginality",
+    "name": "checkOriginal",
     "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "name": "pixelData", "type": "string" },
-      { "name": "gridSize", "type": "uint256" }
+      { "name": "px", "type": "string" },
+      { "name": "grid", "type": "uint256" }
     ],
-    "name": "getOriginalCreator",
+    "name": "getCreator",
     "outputs": [{ "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [{ "name": "tokenId", "type": "uint256" }],
-    "name": "getPrice",
+    "name": "getScore",
     "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getNFTsForSale",
-    "outputs": [{ "type": "uint256[]", "name": "" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -152,20 +167,40 @@ export const PixelNFTABI = [
   },
   {
     "inputs": [
-      { "name": "name", "type": "string" },
-      { "name": "description", "type": "string" },
-      { "name": "gridSize", "type": "uint256" },
-      { "name": "pixelData", "type": "string" }
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "salePrice", "type": "uint256" }
     ],
-    "name": "mint",
-    "outputs": [{ "type": "uint256" }],
+    "name": "royaltyInfo",
+    "outputs": [
+      { "name": "receiver", "type": "address" },
+      { "name": "royaltyAmount", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawPending",
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "name": "tokenId", "type": "uint256" },
-      { "name": "priceInWei", "type": "uint256" }
+      { "name": "name", "type": "string" },
+      { "name": "desc", "type": "string" },
+      { "name": "grid", "type": "uint256" },
+      { "name": "px", "type": "string" }
+    ],
+    "name": "mint",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "id", "type": "uint256" },
+      { "name": "price", "type": "uint256" }
     ],
     "name": "listForSale",
     "outputs": [],
@@ -173,17 +208,27 @@ export const PixelNFTABI = [
     "type": "function"
   },
   {
-    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "inputs": [{ "name": "id", "type": "uint256" }],
     "name": "delist",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "inputs": [{ "name": "id", "type": "uint256" }],
     "name": "buyNFT",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "to", "type": "address" },
+      { "name": "id", "type": "uint256" }
+    ],
+    "name": "transferNFT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -205,6 +250,54 @@ export const PixelNFTABI = [
     "name": "approve",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "operator", "type": "address" },
+      { "name": "approved", "type": "bool" }
+    ],
+    "name": "setApprovalForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "owner", "type": "address" }],
+    "name": "balanceOf",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "name": "getApproved",
+    "outputs": [{ "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "owner", "type": "address" },
+      { "name": "operator", "type": "address" }
+    ],
+    "name": "isApprovedForAll",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "name",
+    "outputs": [{ "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [{ "name": "", "type": "string" }],
+    "stateMutability": "view",
     "type": "function"
   }
 ] as const;
