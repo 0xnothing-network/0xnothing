@@ -18,6 +18,8 @@ interface TokenData {
   pixelData: string;
   price: bigint;
   creator: string;
+  mintedAt?: bigint;
+  artworkHash?: string;
 }
 
 interface NFTItem {

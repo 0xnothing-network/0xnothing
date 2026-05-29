@@ -1,60 +1,75 @@
 export const PixelNFTABI = [
   {
-    "inputs": [{ "name": "_devWallet", "type": "address" }],
+    "inputs": [
+      { "name": "_admin", "type": "address" },
+      { "name": "_treasury", "type": "address" }
+    ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "", "type": "address" },
-      { "indexed": true, "name": "", "type": "uint256" },
-      { "indexed": false, "name": "", "type": "string" }
+      { "indexed": true, "name": "minter", "type": "address" },
+      { "indexed": false, "name": "tokenId", "type": "uint256" },
+      { "indexed": false, "name": "name", "type": "string" }
     ],
-    "name": "Minted",
+    "name": "PixelArtMinted",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "", "type": "uint256" },
-      { "indexed": false, "name": "", "type": "uint256" }
+      { "indexed": true, "name": "tokenId", "type": "uint256" },
+      { "indexed": false, "name": "price", "type": "uint256" }
     ],
-    "name": "Listed",
+    "name": "NFTListed",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "", "type": "uint256" }
+      { "indexed": true, "name": "tokenId", "type": "uint256" }
     ],
-    "name": "Delisted",
+    "name": "NFTDelisted",
     "type": "event"
   },
   {
     "anonymous": false,
     "inputs": [
-      { "indexed": true, "name": "", "type": "uint256" },
-      { "indexed": true, "name": "", "type": "address" },
-      { "indexed": true, "name": "", "type": "address" },
-      { "indexed": false, "name": "", "type": "uint256" }
+      { "indexed": true, "name": "tokenId", "type": "uint256" },
+      { "indexed": true, "name": "buyer", "type": "address" },
+      { "indexed": true, "name": "seller", "type": "address" },
+      { "indexed": false, "name": "price", "type": "uint256" }
     ],
-    "name": "Sold",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": true, "name": "", "type": "address" },
-      { "indexed": false, "name": "", "type": "uint256" }
-    ],
-    "name": "Withdrawn",
+    "name": "NFTBought",
     "type": "event"
   },
   {
     "inputs": [],
-    "name": "devWallet",
+    "name": "admin",
     "outputs": [{ "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasury",
+    "outputs": [{ "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "FEE_PERCENT",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_PRICE",
+    "outputs": [{ "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
@@ -69,8 +84,7 @@ export const PixelNFTABI = [
       { "name": "price", "type": "uint256" },
       { "name": "creator", "type": "address" },
       { "name": "mintedAt", "type": "uint256" },
-      { "name": "artworkHash", "type": "bytes32" },
-      { "name": "score", "type": "uint256" }
+      { "name": "artworkHash", "type": "bytes32" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -104,49 +118,56 @@ export const PixelNFTABI = [
     "type": "function"
   },
   {
-    "inputs": [{ "name": "", "type": "uint256" }],
-    "name": "listedIndex",
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "name": "", "type": "uint256" }],
-    "name": "userTokenIndex",
-    "outputs": [{ "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [{ "name": "", "type": "address" }],
-    "name": "pendingWithdrawals",
+    "name": "pendingRefunds",
     "outputs": [{ "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      { "name": "pixelData", "type": "string" },
-      { "name": "grid", "type": "uint256" }
-    ],
-    "name": "checkOriginal",
+    "inputs": [{ "name": "artworkHash", "type": "bytes32" }],
+    "name": "isOriginal",
     "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "name": "px", "type": "string" },
-      { "name": "grid", "type": "uint256" }
+      { "name": "pixelData", "type": "string" },
+      { "name": "gridSize", "type": "uint256" }
     ],
-    "name": "getCreator",
+    "name": "checkOriginality",
+    "outputs": [{ "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "name": "pixelData", "type": "string" },
+      { "name": "gridSize", "type": "uint256" }
+    ],
+    "name": "getOriginalCreator",
     "outputs": [{ "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [{ "name": "tokenId", "type": "uint256" }],
-    "name": "getScore",
+    "name": "getPrice",
+    "outputs": [{ "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getNFTsForSale",
+    "outputs": [{ "name": "", "type": "uint256[]" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getListedTokensCount",
     "outputs": [{ "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -166,31 +187,40 @@ export const PixelNFTABI = [
     "type": "function"
   },
   {
-    "inputs": [
-      { "name": "tokenId", "type": "uint256" },
-      { "name": "salePrice", "type": "uint256" }
-    ],
-    "name": "royaltyInfo",
+    "inputs": [{ "name": "owner", "type": "address" }],
+    "name": "getMintedTokens",
+    "outputs": [{ "name": "", "type": "uint256[]" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "name": "getTokenData",
     "outputs": [
-      { "name": "receiver", "type": "address" },
-      { "name": "royaltyAmount", "type": "uint256" }
+      {
+        "components": [
+          { "name": "name", "type": "string" },
+          { "name": "description", "type": "string" },
+          { "name": "gridSize", "type": "uint256" },
+          { "name": "pixelData", "type": "string" },
+          { "name": "price", "type": "uint256" },
+          { "name": "creator", "type": "address" },
+          { "name": "mintedAt", "type": "uint256" },
+          { "name": "artworkHash", "type": "bytes32" }
+        ],
+        "name": "",
+        "type": "tuple"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "withdrawPending",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [
       { "name": "name", "type": "string" },
-      { "name": "desc", "type": "string" },
-      { "name": "grid", "type": "uint256" },
-      { "name": "px", "type": "string" }
+      { "name": "description", "type": "string" },
+      { "name": "gridSize", "type": "uint256" },
+      { "name": "pixelData", "type": "string" }
     ],
     "name": "mint",
     "outputs": [{ "name": "", "type": "uint256" }],
@@ -199,8 +229,8 @@ export const PixelNFTABI = [
   },
   {
     "inputs": [
-      { "name": "id", "type": "uint256" },
-      { "name": "price", "type": "uint256" }
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "priceInWei", "type": "uint256" }
     ],
     "name": "listForSale",
     "outputs": [],
@@ -208,14 +238,14 @@ export const PixelNFTABI = [
     "type": "function"
   },
   {
-    "inputs": [{ "name": "id", "type": "uint256" }],
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
     "name": "delist",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [{ "name": "id", "type": "uint256" }],
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
     "name": "buyNFT",
     "outputs": [],
     "stateMutability": "payable",
@@ -224,9 +254,23 @@ export const PixelNFTABI = [
   {
     "inputs": [
       { "name": "to", "type": "address" },
-      { "name": "id", "type": "uint256" }
+      { "name": "tokenId", "type": "uint256" }
     ],
-    "name": "transferNFT",
+    "name": "transfer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "name": "recipient", "type": "address" }],
+    "name": "withdrawRefunds",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

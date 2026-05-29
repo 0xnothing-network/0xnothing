@@ -37,7 +37,6 @@ interface TokenData {
   creator: string;
   mintedAt: bigint;
   artworkHash: string;
-  score: bigint;
 }
 
 const tokenDataCache = new Map<string, { data: TokenData | null; timestamp: number }>();
@@ -54,7 +53,7 @@ async function fetchTokenDataCached(tokenId: bigint): Promise<TokenData | null> 
     const data = await publicClient.readContract({
       address: getContractAddress() as `0x${string}`,
       abi: PixelNFTABI,
-      functionName: "tokenData",
+      functionName: "getTokenData",
       args: [tokenId],
     });
     const result = data as unknown as TokenData;
@@ -66,12 +65,12 @@ async function fetchTokenDataCached(tokenId: bigint): Promise<TokenData | null> 
   }
 }
 
-export async function getUserTokens(address: string) {
+export async function getMintedTokens(address: string) {
   try {
     const tokens = await publicClient.readContract({
       address: getContractAddress() as `0x${string}`,
       abi: PixelNFTABI,
-      functionName: "userTokens",
+      functionName: "getMintedTokens",
       args: [address as `0x${string}`],
     });
     return (tokens as bigint[]).sort((a, b) => Number(a - b));
@@ -80,64 +79,8 @@ export async function getUserTokens(address: string) {
   }
 }
 
-export async function getTokenData(tokenId: bigint) {
-  return fetchTokenDataCached(tokenId);
-}
-
-export async function getScore(tokenId: bigint) {
-  try {
-    return await publicClient.readContract({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "getScore",
-      args: [tokenId],
-    }) as bigint;
-  } catch {
-    return 0n;
-  }
-}
-
-export async function checkOriginal(pixelData: string, gridSize: number) {
-  try {
-    return await publicClient.readContract({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "checkOriginal",
-      args: [pixelData, BigInt(gridSize)],
-    }) as boolean;
-  } catch {
-    return false;
-  }
-}
-
-export async function getCreator(pixelData: string, gridSize: number) {
-  try {
-    return await publicClient.readContract({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "getCreator",
-      args: [pixelData, BigInt(gridSize)],
-    }) as string;
-  } catch {
-    return "0x0000000000000000000000000000000000000000";
-  }
-}
-
-export async function getListedTokens() {
-  try {
-    const tokens = await publicClient.readContract({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "listedTokens",
-    });
-    return (tokens as bigint[]).sort((a, b) => Number(a - b));
-  } catch {
-    return [];
-  }
-}
-
 export async function getUserNFTs(address: string) {
-  const tokenIds = await getUserTokens(address);
+  const tokenIds = await getMintedTokens(address);
   const ownerPromises = tokenIds.map(async (id) => {
     try {
       const owner = await publicClient.readContract({
@@ -151,7 +94,7 @@ export async function getUserNFTs(address: string) {
       return { id, owner: "" };
     }
   });
-  const dataPromises = tokenIds.map(id => getTokenData(id));
+  const dataPromises = tokenIds.map(id => fetchTokenDataCached(id));
   const [owners, datas] = await Promise.all([
     Promise.all(ownerPromises),
     Promise.all(dataPromises),
@@ -166,10 +109,40 @@ export async function getUserNFTs(address: string) {
     .filter(nft => nft.data !== null);
 }
 
+export async function getTokenData(tokenId: bigint) {
+  return fetchTokenDataCached(tokenId);
+}
+
+export async function getPrice(tokenId: bigint) {
+  try {
+    return await publicClient.readContract({
+      address: getContractAddress() as `0x${string}`,
+      abi: PixelNFTABI,
+      functionName: "getPrice",
+      args: [tokenId],
+    }) as bigint;
+  } catch {
+    return 0n;
+  }
+}
+
+export async function getNFTsForSale() {
+  try {
+    const tokens = await publicClient.readContract({
+      address: getContractAddress() as `0x${string}`,
+      abi: PixelNFTABI,
+      functionName: "getNFTsForSale",
+    });
+    return (tokens as bigint[]).sort((a, b) => Number(a - b));
+  } catch {
+    return [];
+  }
+}
+
 export async function getMarketplaceNFTs() {
-  const tokenIds = await getListedTokens();
+  const tokenIds = await getNFTsForSale();
   const results = await Promise.allSettled(
-    tokenIds.map(id => getTokenData(id))
+    tokenIds.map(id => fetchTokenDataCached(id))
   );
   const ownerResults = await Promise.allSettled(
     tokenIds.map(async (tokenId) => {
@@ -191,17 +164,4 @@ export async function getMarketplaceNFTs() {
       owner: ownerResults[i].status === "fulfilled" ? ownerResults[i].value : "",
     }))
     .filter(nft => nft.data !== null);
-}
-
-export async function getPendingWithdrawals(address: string) {
-  try {
-    return await publicClient.readContract({
-      address: getContractAddress() as `0x${string}`,
-      abi: PixelNFTABI,
-      functionName: "pendingWithdrawals",
-      args: [address as `0x${string}`],
-    }) as bigint;
-  } catch {
-    return 0n;
-  }
 }

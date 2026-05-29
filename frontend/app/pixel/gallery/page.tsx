@@ -13,7 +13,7 @@ import { parseEther } from "viem";
 
 interface NFTItem {
   tokenId: bigint;
-  data: { name: string; description: string; gridSize: number | bigint; pixelData: string; price: bigint; creator: string } | null;
+  data: { name: string; description: string; gridSize: number | bigint; pixelData: string; price: bigint; creator: string; mintedAt?: bigint; artworkHash?: string } | null;
   imageUrl: string;
   isForSale: boolean;
 }
