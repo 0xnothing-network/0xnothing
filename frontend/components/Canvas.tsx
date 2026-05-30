@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import { downloadAsPNG, downloadAsJSON, pixelDataToJSON } from "@/lib/gridParser";
-import { PixelButton } from "@/components/PixelButton";
 
 interface CanvasProps {
   gridSize: number;
@@ -16,9 +15,14 @@ interface CanvasProps {
 }
 
 type Tool = "pencil" | "eraser" | "fill" | "picker";
+type Symmetry = "none" | "horizontal" | "vertical" | "both";
+
+const BRUSH_SIZES = [1, 2, 3, 4];
+const SUBDIVISION_OPTIONS = [0, 2, 4, 8];
 
 export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onColorPick, onStrokeStart, onUndo, canUndo }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isDrawingRef = useRef(false);
@@ -32,18 +36,35 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [currentTool, setCurrentTool] = useState<Tool>("pencil");
+  const [brushSize, setBrushSize] = useState(1);
+  const [symmetry, setSymmetry] = useState<Symmetry>("none");
+  const [subdivision, setSubdivision] = useState(0);
 
-  useEffect(() => {
-    currentToolRef.current = currentTool;
-  }, [currentTool]);
+  const brushSizeRef = useRef(brushSize);
+  const symmetryRef = useRef(symmetry);
 
-  useEffect(() => {
-    selectedColorRef.current = selectedColor;
-  }, [selectedColor]);
+  useEffect(() => { currentToolRef.current = currentTool; }, [currentTool]);
+  useEffect(() => { selectedColorRef.current = selectedColor; }, [selectedColor]);
+  useEffect(() => { pixelDataRef.current = pixelData; }, [pixelData]);
+  useEffect(() => { brushSizeRef.current = brushSize; }, [brushSize]);
+  useEffect(() => { symmetryRef.current = symmetry; }, [symmetry]);
 
-  useEffect(() => {
-    pixelDataRef.current = pixelData;
-  }, [pixelData]);
+  const getGridCoords = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return null;
+    const rect = canvas.getBoundingClientRect();
+    const containerSize = Math.min(container.clientWidth, container.clientHeight);
+    const cs = Math.floor(containerSize / gridSize);
+    const gridDisplaySize = cs * gridSize * zoom;
+    const offsetX = (container.clientWidth - gridDisplaySize) / 2 - pan.x * zoom;
+    const offsetY = (container.clientHeight - gridDisplaySize) / 2 - pan.y * zoom;
+    const clickX = clientX - rect.left;
+    const clickY = clientY - rect.top;
+    const gridX = Math.floor((clickX - offsetX) / (cs * zoom));
+    const gridY = Math.floor((clickY - offsetY) / (cs * zoom));
+    return { x: gridX, y: gridY, cs, offsetX, offsetY, gridDisplaySize };
+  }, [gridSize, zoom, pan]);
 
   const drawGrid = useCallback(() => {
     if (rafRef.current) return;
@@ -105,8 +126,118 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
         ctx.lineTo(offsetX + gridDisplaySize, py);
         ctx.stroke();
       }
+
+      const centerH = offsetX + gridDisplaySize / 2;
+      const centerV = offsetY + gridDisplaySize / 2;
+
+      if (symmetry === "horizontal" || symmetry === "both") {
+        ctx.strokeStyle = "rgba(255, 100, 100, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(centerH, offsetY);
+        ctx.lineTo(centerH, offsetY + gridDisplaySize);
+        ctx.stroke();
+      }
+
+      if (symmetry === "vertical" || symmetry === "both") {
+        ctx.strokeStyle = "rgba(100, 100, 255, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(offsetX, centerV);
+        ctx.lineTo(offsetX + gridDisplaySize, centerV);
+        ctx.stroke();
+      }
+
+      if (subdivision > 0) {
+        ctx.strokeStyle = "rgba(100, 255, 150, 0.25)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 4]);
+        const subCount = gridSize / subdivision;
+        for (let i = 1; i < subCount; i++) {
+          const px = offsetX + i * subdivision * cs * zoom;
+          ctx.beginPath();
+          ctx.moveTo(px, offsetY);
+          ctx.lineTo(px, offsetY + gridDisplaySize);
+          ctx.stroke();
+
+          const py = offsetY + i * subdivision * cs * zoom;
+          ctx.beginPath();
+          ctx.moveTo(offsetX, py);
+          ctx.lineTo(offsetX + gridDisplaySize, py);
+          ctx.stroke();
+        }
+      }
+
+      ctx.setLineDash([]);
     });
-  }, [pixelData, gridSize, zoom, pan]);
+  }, [pixelData, gridSize, zoom, pan, symmetry, subdivision]);
+
+  const drawPreview = useCallback((gridX: number, gridY: number) => {
+    const previewCanvas = previewCanvasRef.current;
+    const container = containerRef.current;
+    if (!previewCanvas || !container) return;
+    const pctx = previewCanvas.getContext("2d");
+    if (!pctx) return;
+
+    const containerSize = Math.min(container.clientWidth, container.clientHeight);
+    const cs = Math.floor(containerSize / gridSize);
+    const gridDisplaySize = cs * gridSize * zoom;
+    const offsetX = (container.clientWidth - gridDisplaySize) / 2 - pan.x * zoom;
+    const offsetY = (container.clientHeight - gridDisplaySize) / 2 - pan.y * zoom;
+
+    previewCanvas.width = container.clientWidth;
+    previewCanvas.height = container.clientHeight;
+
+    pctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+    const color = selectedColorRef.current;
+    const tool = currentToolRef.current;
+    const fillColor = tool === "eraser" ? "transparent" : color;
+    const half = Math.floor(brushSizeRef.current / 2);
+
+    const paintPixel = (px: number, py: number) => {
+      if (px < 0 || px >= gridSize || py < 0 || py >= gridSize) return;
+      const drawX = offsetX + px * cs * zoom;
+      const drawY = offsetY + py * cs * zoom;
+      if (tool === "eraser") {
+        pctx.fillStyle = "rgba(255, 80, 80, 0.4)";
+        pctx.strokeStyle = "rgba(255, 80, 80, 0.8)";
+      } else {
+        pctx.fillStyle = color + "60";
+        pctx.strokeStyle = color + "cc";
+      }
+      pctx.fillRect(drawX, drawY, cs * zoom, cs * zoom);
+      pctx.lineWidth = 1.5;
+      pctx.strokeRect(drawX + 0.5, drawY + 0.5, cs * zoom - 1, cs * zoom - 1);
+    };
+
+    const paintBrush = (cx: number, cy: number) => {
+      for (let dy = -half; dy < brushSizeRef.current - half; dy++) {
+        for (let dx = -half; dx < brushSizeRef.current - half; dx++) {
+          paintPixel(cx + dx, cy + dy);
+        }
+      }
+    };
+
+    paintBrush(gridX, gridY);
+
+    const sym = symmetryRef.current;
+    if (sym !== "none") {
+      const mirrorH = gridSize - 1 - gridX;
+      const mirrorV = gridSize - 1 - gridY;
+      if (sym === "horizontal" || sym === "both") {
+        paintBrush(mirrorH, gridY);
+      }
+      if (sym === "vertical" || sym === "both") {
+        paintBrush(gridX, mirrorV);
+      }
+      if (sym === "both") {
+        paintBrush(mirrorH, mirrorV);
+      }
+    }
+  }, [gridSize, zoom, pan]);
 
   useEffect(() => {
     drawGrid();
@@ -162,13 +293,42 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
     setPixelData(newData);
   }, [pixelData, gridSize, setPixelData]);
 
-  const drawPixel = useCallback((x: number, y: number, tool: Tool, color: string) => {
-    setPixelData(prev => {
-      const next = prev.map(row => [...row]);
-      next[y][x] = tool === "eraser" ? "transparent" : color;
-      return next;
-    });
-  }, []);
+  const paintPixels = useCallback((gridX: number, gridY: number, tool: Tool, color: string) => {
+    const fillColor = tool === "eraser" ? "transparent" : color;
+    const half = Math.floor(brushSize / 2);
+
+    const applyToPixel = (px: number, py: number) => {
+      if (px < 0 || px >= gridSize || py < 0 || py >= gridSize) return;
+      if (pixelDataRef.current[py]?.[px] === fillColor) return;
+      setPixelData(prev => {
+        const next = prev.map(row => [...row]);
+        next[py][px] = fillColor;
+        return next;
+      });
+    };
+
+    for (let dy = -half; dy < brushSize - half; dy++) {
+      for (let dx = -half; dx < brushSize - half; dx++) {
+        const cx = gridX + dx;
+        const cy = gridY + dy;
+        applyToPixel(cx, cy);
+
+        if (symmetry !== "none") {
+          const mirrorH = gridSize - 1 - cx;
+          const mirrorV = gridSize - 1 - cy;
+          if (symmetry === "horizontal" || symmetry === "both") {
+            applyToPixel(mirrorH, cy);
+          }
+          if (symmetry === "vertical" || symmetry === "both") {
+            applyToPixel(cx, mirrorV);
+          }
+          if (symmetry === "both") {
+            applyToPixel(mirrorH, mirrorV);
+          }
+        }
+      }
+    }
+  }, [gridSize, brushSize, symmetry, setPixelData]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (e.button === 1 || e.button === 2) {
@@ -178,22 +338,8 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
       return;
     }
 
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-    const rect = canvas.getBoundingClientRect();
-    const containerSize = Math.min(container.clientWidth, container.clientHeight);
-    const cs = Math.floor(containerSize / gridSize);
-    const gridDisplaySize = cs * gridSize * zoom;
-    const offsetX = (container.clientWidth - gridDisplaySize) / 2 - pan.x * zoom;
-    const offsetY = (container.clientHeight - gridDisplaySize) / 2 - pan.y * zoom;
-
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    const gridX = Math.floor((clickX - offsetX) / (cs * zoom));
-    const gridY = Math.floor((clickY - offsetY) / (cs * zoom));
-
-    if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return;
+    const coords = getGridCoords(e.clientX, e.clientY);
+    if (!coords || coords.x < 0 || coords.x >= gridSize || coords.y < 0 || coords.y >= gridSize) return;
 
     isDrawingRef.current = true;
     const tool = currentToolRef.current;
@@ -201,31 +347,30 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
     if (tool === "pencil" || tool === "eraser") {
       if (!strokeSnapshotRef.current) {
         strokeSnapshotRef.current = pixelDataRef.current.map(row => [...row]);
-        if (onStrokeStart) onStrokeStart(strokeSnapshotRef.current);
+        onStrokeStart?.(strokeSnapshotRef.current);
       }
     }
 
     if (tool === "fill") {
       isDrawingRef.current = false;
-      floodFill(gridX, gridY, selectedColorRef.current);
-      if (onStrokeStart) onStrokeStart(pixelDataRef.current);
+      floodFill(coords.x, coords.y, selectedColorRef.current);
+      onStrokeStart?.(pixelDataRef.current);
       return;
     }
 
     if (tool === "picker") {
       isDrawingRef.current = false;
-      const pickedColor = pixelData[gridY]?.[gridX];
+      const pickedColor = pixelDataRef.current[coords.y]?.[coords.x];
       if (pickedColor && pickedColor !== "transparent" && onColorPick) {
         onColorPick(pickedColor);
       }
       return;
     }
 
-    strokeSnapshotRef.current = pixelData.map(row => [...row]);
+    strokeSnapshotRef.current = pixelDataRef.current.map(row => [...row]);
     onStrokeStart?.(strokeSnapshotRef.current);
-    drawPixel(gridX, gridY, tool, selectedColorRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gridSize, zoom, pan, floodFill, drawPixel]);
+    paintPixels(coords.x, coords.y, tool, selectedColorRef.current);
+  }, [getGridCoords, gridSize, floodFill, paintPixels]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (isPanningRef.current) {
@@ -236,34 +381,44 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
       return;
     }
 
-    if (!isDrawingRef.current) return;
+    const coords = getGridCoords(e.clientX, e.clientY);
 
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
-    const rect = canvas.getBoundingClientRect();
-    const containerSize = Math.min(container.clientWidth, container.clientHeight);
-    const cs = Math.floor(containerSize / gridSize);
-    const gridDisplaySize = cs * gridSize * zoom;
-    const offsetX = (container.clientWidth - gridDisplaySize) / 2 - pan.x * zoom;
-    const offsetY = (container.clientHeight - gridDisplaySize) / 2 - pan.y * zoom;
+    if (!isDrawingRef.current) {
+      if (coords) {
+        if (coords.x >= 0 && coords.x < gridSize && coords.y >= 0 && coords.y < gridSize) {
+          drawPreview(coords.x, coords.y);
+        } else {
+          const previewCanvas = previewCanvasRef.current;
+          if (previewCanvas) {
+            const pctx = previewCanvas.getContext("2d");
+            if (pctx) pctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+          }
+        }
+      }
+      return;
+    }
 
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-    const gridX = Math.floor((clickX - offsetX) / (cs * zoom));
-    const gridY = Math.floor((clickY - offsetY) / (cs * zoom));
-
-    if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) return;
+    if (!coords || coords.x < 0 || coords.x >= gridSize || coords.y < 0 || coords.y >= gridSize) return;
 
     const tool = currentToolRef.current;
     if (tool === "pencil" || tool === "eraser") {
-      drawPixel(gridX, gridY, tool, selectedColorRef.current);
+      paintPixels(coords.x, coords.y, tool, selectedColorRef.current);
     }
-  }, [gridSize, zoom, pan, drawPixel]);
+  }, [getGridCoords, zoom, gridSize, paintPixels, drawPreview]);
 
   const handleMouseUp = useCallback(() => {
     isDrawingRef.current = false;
     isPanningRef.current = false;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    isDrawingRef.current = false;
+    isPanningRef.current = false;
+    const previewCanvas = previewCanvasRef.current;
+    if (previewCanvas) {
+      const pctx = previewCanvas.getContext("2d");
+      if (pctx) pctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+    }
   }, []);
 
   return (
@@ -314,6 +469,61 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
           <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-white hover:bg-white/5 transition-all text-[10px] font-bold" title="Reset View">R</button>
         </div>
 
+        {/* Brush size */}
+        <div className="flex items-center gap-0.5 bg-[var(--surface)] rounded-xl p-1 border border-[var(--border)]">
+          <span className="text-[var(--muted)] text-[10px] px-1 font-mono">SZ</span>
+          {BRUSH_SIZES.map(size => (
+            <button
+              key={size}
+              onClick={() => setBrushSize(size)}
+              title={`Brush ${size}x${size}`}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold transition-all ${brushSize === size ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white hover:bg-white/5"}`}
+            >
+              {size}
+            </button>
+          ))}
+        </div>
+
+        {/* Symmetry */}
+        <div className="flex items-center gap-0.5 bg-[var(--surface)] rounded-xl p-1 border border-[var(--border)]">
+          <SymmetryButton active={symmetry === "horizontal"} onClick={() => setSymmetry(s => s === "horizontal" ? "none" : "horizontal")} title="Symmetry Horizontal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v20" />
+              <path d="M8 6l4-4 4 4" />
+              <path d="M8 18l4 4 4-4" />
+            </svg>
+          </SymmetryButton>
+          <SymmetryButton active={symmetry === "vertical"} onClick={() => setSymmetry(s => s === "vertical" ? "none" : "vertical")} title="Symmetry Vertical">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M2 12h20" />
+              <path d="M6 8l-4 4 4 4" />
+              <path d="M18 8l4 4-4 4" />
+            </svg>
+          </SymmetryButton>
+          <SymmetryButton active={symmetry === "both"} onClick={() => setSymmetry(s => s === "both" ? "none" : "both")} title="Symmetry Both">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2v20" />
+              <path d="M2 12h20" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+            </svg>
+          </SymmetryButton>
+        </div>
+
+        {/* Subdivision */}
+        <div className="flex items-center gap-0.5 bg-[var(--surface)] rounded-xl p-1 border border-[var(--border)]">
+          <span className="text-[var(--muted)] text-[10px] px-1 font-mono">GRID</span>
+          {SUBDIVISION_OPTIONS.map(opt => (
+            <button
+              key={opt}
+              onClick={() => setSubdivision(opt)}
+              title={opt === 0 ? "No grid" : `${opt}x${opt} sub-grid`}
+              className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold transition-all ${subdivision === opt ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white hover:bg-white/5"}`}
+            >
+              {opt === 0 ? "—" : opt}
+            </button>
+          ))}
+        </div>
+
         <div className="px-2.5 py-1.5 bg-[var(--surface)] rounded-xl border border-[var(--border)]">
           <span className="text-[var(--muted)] text-[11px] font-mono">{gridSize}×{gridSize}</span>
         </div>
@@ -323,12 +533,13 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
 
       <div
         ref={containerRef}
-        className="w-full max-w-[480px] flex justify-center items-center overflow-hidden bg-[var(--background)] rounded-xl border border-[var(--border)]"
+        className="w-full max-w-[480px] flex justify-center items-center overflow-hidden bg-[var(--background)] rounded-xl border border-[var(--border)] relative"
         style={{ aspectRatio: "1 / 1" }}
       >
         <canvas
           ref={canvasRef}
           style={{
+            position: "absolute",
             imageRendering: "pixelated",
             cursor: currentTool === "fill" ? "cell" : currentTool === "picker" ? "crosshair" : "crosshair",
             width: "100%",
@@ -337,9 +548,21 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           onWheel={(e) => { e.preventDefault(); setZoom(z => e.deltaY < 0 ? Math.min(z * 1.2, 10) : Math.max(z / 1.2, 0.5)); }}
           onContextMenu={(e) => e.preventDefault()}
+        />
+        <canvas
+          ref={previewCanvasRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+            imageRendering: "pixelated",
+          }}
         />
       </div>
 
@@ -349,6 +572,14 @@ export function Canvas({ gridSize, pixelData, setPixelData, selectedColor, onCol
 }
 
 function ToolButton({ children, active, onClick, title }: { children: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
+  return (
+    <button onClick={onClick} title={title} className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150 ${active ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white hover:bg-white/5"}`}>
+      {children}
+    </button>
+  );
+}
+
+function SymmetryButton({ children, active, onClick, title }: { children: React.ReactNode; active: boolean; onClick: () => void; title: string }) {
   return (
     <button onClick={onClick} title={title} className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-150 ${active ? "bg-white/10 text-white" : "text-[var(--muted)] hover:text-white hover:bg-white/5"}`}>
       {children}

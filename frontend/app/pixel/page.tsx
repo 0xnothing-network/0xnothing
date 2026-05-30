@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Canvas } from "@/components/Canvas";
 import { Toolbar } from "@/components/Toolbar";
 import { MintPanel } from "@/components/MintPanel";
@@ -18,6 +18,9 @@ export default function PixelPage() {
   const [selectedColor, setSelectedColor] = useState("#6366F1");
   const [mounted, setMounted] = useState(false);
 
+  const pixelDataRef = useRef(pixelData);
+  const historyRef = useRef(history);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -27,32 +30,40 @@ export default function PixelPage() {
     setHistory([]);
   }, [gridSize]);
 
-  const handleClear = () => {
-    setHistory(h => [...h, pixelData.map(row => [...row])].slice(-50));
+  useEffect(() => {
+    pixelDataRef.current = pixelData;
+  }, [pixelData]);
+
+  useEffect(() => {
+    historyRef.current = history;
+  }, [history]);
+
+  const handleClear = useCallback(() => {
+    setHistory(h => [...h, pixelDataRef.current.map(row => [...row])].slice(-50));
     setPixelData(Array(gridSize).fill(null).map(() => Array(gridSize).fill("transparent")));
-  };
+  }, [gridSize]);
 
-  const handleApplyPixelData = (newPixelData: string[][]) => {
-    setHistory(h => [...h, pixelData.map(row => [...row])].slice(-50));
+  const handleApplyPixelData = useCallback((newPixelData: string[][]) => {
+    setHistory(h => [...h, pixelDataRef.current.map(row => [...row])].slice(-50));
     setPixelData(newPixelData);
-  };
+  }, []);
 
-  const handleStrokeStart = () => {
-    setHistory(h => [...h, pixelData.map(row => [...row])].slice(-50));
-  };
+  const handleStrokeStart = useCallback(() => {
+    setHistory(h => [...h, pixelDataRef.current.map(row => [...row])].slice(-50));
+  }, []);
 
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
+  const handleUndo = useCallback(() => {
+    if (historyRef.current.length === 0) return;
+    const prev = historyRef.current[historyRef.current.length - 1];
     setHistory(h => h.slice(0, -1));
     setPixelData(prev);
-  };
+  }, []);
 
   const canUndo = history.length > 0;
 
-  const handleMintSuccess = (tokenId: bigint) => {
+  const handleMintSuccess = useCallback((tokenId: bigint) => {
     console.log("Minted:", tokenId);
-  };
+  }, []);
 
   if (!mounted) {
     return (

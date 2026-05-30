@@ -11,6 +11,8 @@ const NAV_LINKS = [
   { href: "/pixel/marketplace", label: "Marketplace" },
 ];
 
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+
 interface ContractStats {
   totalFees: string;
   txCount: number;
@@ -48,7 +50,7 @@ export function PixelHeader() {
             <span className="text-white font-bold text-base tracking-tight">0xPixel</span>
           </Link>
             <a
-            href="https://etherscan.io/address/0x8693f17185F3C295edfD2aDC715f20290A5D538D#analytics"
+            href={CONTRACT_ADDRESS ? `https://etherscan.io/address/${CONTRACT_ADDRESS}#analytics` : "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"

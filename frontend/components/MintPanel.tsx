@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import { encodeFunctionData } from "viem";
 import { PixelNFTABI } from "@/lib/abi";
@@ -11,6 +11,8 @@ interface MintPanelProps {
   gridSize: number;
   onMintSuccess: (tokenId: bigint) => void;
 }
+
+const DEBOUNCE_MS = 600;
 
 export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps) {
   const [name, setName] = useState("");
@@ -28,14 +30,24 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     hash: txHash as `0x${string}` | undefined,
   });
 
+  const hasDrawing = pixelData.some(row => row.some(cell => cell !== "transparent"));
+
+  // Refs for debounce
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPixelDataRef = useRef<string>("");
+  const lastCheckedRef = useRef<string>("");
+  const pixelDataRef = useRef(pixelData);
+  pixelDataRef.current = pixelData;
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const hasDrawing = pixelData.some(row => row.some(cell => cell !== "transparent"));
-
-  const generatePixelArt = useCallback((): string => {
+  // Generate base64 synchronously for preview (runs on pixelData change, no debounce)
+  const previewBase64 = useMemo(() => {
     if (typeof document === "undefined") return "";
+    if (!hasDrawing) return "";
+
     const OUTPUT_SIZE = 512;
     const canvas = document.createElement("canvas");
     canvas.width = OUTPUT_SIZE;
@@ -44,7 +56,6 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     if (!ctx) return "";
 
     const pixelSize = OUTPUT_SIZE / gridSize;
-
     ctx.fillStyle = "#0F0F23";
     ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
 
@@ -58,24 +69,93 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
       }
     }
 
-    return canvas.toDataURL("image/png").split(",")[1];
-  }, [pixelData, gridSize]);
+    return canvas.toDataURL("image/png").split(",")[1] ?? "";
+  }, [pixelData, gridSize, hasDrawing]);
 
-  const pixelDataBase64 = useMemo(() => {
+  // Generate stable hash for originality check (debounced)
+  const pixelDataHash = useMemo(() => {
     if (!hasDrawing) return "";
-    return generatePixelArt();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasDrawing]);
+    // Build a compact hash from pixel data - faster than full base64
+    // Only non-transparent pixels matter for uniqueness
+    const coords: string[] = [];
+    for (let y = 0; y < gridSize; y++) {
+      for (let x = 0; x < gridSize; x++) {
+        const color = pixelData[y]?.[x] || "";
+        if (color && color !== "transparent") {
+          // Encode as: x,y,colorLength,first3hexchars
+          const hex = color.replace("#", "");
+          coords.push(`${x},${y},${hex.slice(0, 3)}`);
+        }
+      }
+    }
+    return coords.join("|");
+  }, [pixelData, gridSize, hasDrawing]);
 
   const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` | undefined;
 
+  // Debounced base64 for on-chain check
+  const [debouncedBase64, setDebouncedBase64] = useState("");
+  const debouncedBase64Ref = useRef("");
+
+  useEffect(() => {
+    if (!hasDrawing || !CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      setDebouncedBase64("");
+      debouncedBase64Ref.current = "";
+      lastCheckedRef.current = "";
+      return;
+    }
+
+    // Skip if data hasn't actually changed
+    const currentHash = pixelDataHash;
+    if (currentHash === lastCheckedRef.current) return;
+
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+
+    debounceTimerRef.current = setTimeout(async () => {
+      // Generate fresh base64 at debounce time
+      const base64 = (() => {
+        const OUTPUT_SIZE = 512;
+        const canvas = document.createElement("canvas");
+        canvas.width = OUTPUT_SIZE;
+        canvas.height = OUTPUT_SIZE;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return "";
+
+        const pixelSize = OUTPUT_SIZE / gridSize;
+        ctx.fillStyle = "#0F0F23";
+        ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+
+        for (let y = 0; y < gridSize; y++) {
+          for (let x = 0; x < gridSize; x++) {
+            const color = pixelDataRef.current[y]?.[x] || "transparent";
+            if (color !== "transparent") {
+              ctx.fillStyle = color;
+              ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            }
+          }
+        }
+        return canvas.toDataURL("image/png").split(",")[1] ?? "";
+      })();
+
+      debouncedBase64Ref.current = base64;
+      lastCheckedRef.current = currentHash;
+      setDebouncedBase64(base64);
+    }, DEBOUNCE_MS);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [pixelDataHash, hasDrawing, CONTRACT_ADDRESS, gridSize]);
+
+  // Only re-fetch when debouncedBase64 actually changes
   const { data: isOriginal, isLoading: isCheckingOriginal } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
     functionName: "checkOriginality",
-    args: [pixelDataBase64, BigInt(gridSize)],
+    args: [debouncedBase64, BigInt(gridSize)],
     query: {
-      enabled: hasDrawing && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000",
+      enabled: !!debouncedBase64 && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000",
     },
   });
 
@@ -83,13 +163,20 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
     functionName: "getOriginalCreator",
-    args: [pixelDataBase64, BigInt(gridSize)],
+    args: [debouncedBase64, BigInt(gridSize)],
     query: {
-      enabled: hasDrawing && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000" && isOriginal === false,
+      enabled: !!debouncedBase64 && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000" && isOriginal === false,
     },
   });
 
-  const handleMint = async () => {
+  // Notify parent when mint succeeds
+  useEffect(() => {
+    if (isConfirmed && txHash) {
+      onMintSuccess(BigInt(0));
+    }
+  }, [isConfirmed, txHash, onMintSuccess]);
+
+  const handleMint = useCallback(async () => {
     if (!isConnected || !address) {
       setError("Please connect your wallet first!");
       return;
@@ -110,7 +197,30 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     setError(null);
 
     try {
-      const pixelDataBase64ForMint = generatePixelArt();
+      // Generate fresh base64 for mint (same logic as preview)
+      const OUTPUT_SIZE = 512;
+      const canvas = document.createElement("canvas");
+      canvas.width = OUTPUT_SIZE;
+      canvas.height = OUTPUT_SIZE;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas not available");
+
+      const pixelSize = OUTPUT_SIZE / gridSize;
+      ctx.fillStyle = "#0F0F23";
+      ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+
+      for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+          const color = pixelDataRef.current[y]?.[x] || "transparent";
+          if (color !== "transparent") {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          }
+        }
+      }
+
+      const pixelDataBase64ForMint = canvas.toDataURL("image/png").split(",")[1] ?? "";
+
       const CONTRACT_ADDRESS_MINT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
       if (!CONTRACT_ADDRESS_MINT || CONTRACT_ADDRESS_MINT === "0x0000000000000000000000000000000000000000") {
@@ -132,10 +242,6 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
       });
 
       setTxHash(hash);
-
-      if (isConfirmed) {
-        onMintSuccess(BigInt(0));
-      }
     } catch (err: unknown) {
       const error = err as { shortMessage?: string; message?: string; details?: string };
       const msg = error.shortMessage || error.message || error.details || "";
@@ -148,7 +254,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isConnected, address, name, description, hasDrawing, gridSize, sendTransactionAsync]);
 
   const canMint = !isLoading && name.trim() && hasDrawing && isOriginal !== false;
 
@@ -166,6 +272,59 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
 
   return (
     <div className="bg-[var(--surface)] rounded-2xl p-4 space-y-4 border border-[var(--border)]">
+      {/* NFT Preview */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-[var(--muted-dark)] text-[10px] font-mono uppercase tracking-wider">NFT Preview</p>
+          <div className="flex items-center gap-1.5">
+            {hasDrawing ? (
+              isCheckingOriginal ? (
+                <span className="flex items-center gap-1 text-[10px]" style={{ color: "rgba(99,102,241,0.5)" }}>
+                  <span className="w-2 h-2 border border-indigo-500/40 border-t-indigo-500 rounded-full animate-spin" />
+                  checking
+                </span>
+              ) : isOriginal === false ? (
+                <span className="text-[10px] font-mono font-bold" style={{ color: "rgba(239,68,68,0.7)" }}>TAKEN</span>
+              ) : (
+                <span className="text-[10px] font-mono font-bold" style={{ color: "rgba(16,185,129,0.7)" }}>ORIGINAL</span>
+              )
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className="relative rounded-xl overflow-hidden border"
+          style={{
+            background: "#0F0F23",
+            aspectRatio: "1 / 1",
+            borderColor: hasDrawing ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.05)",
+          }}
+        >
+          {hasDrawing ? (
+            <img
+              src={`data:image/png;base64,${previewBase64}`}
+              alt="NFT Preview"
+              className="w-full h-full object-contain"
+              style={{ imageRendering: "pixelated" }}
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+              <svg width="32" height="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+              <p className="text-[var(--muted-dark)] text-[10px]">Draw something to see preview</p>
+            </div>
+          )}
+
+          {/* Gradient overlay */}
+          {hasDrawing && (
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
+          )}
+        </div>
+      </div>
+
       {/* Not connected */}
       {!isConnected ? (
         <div className="flex items-center gap-3 py-1">
@@ -200,32 +359,6 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
             rows={2}
             className="w-full bg-white/5 border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-white placeholder-[var(--muted-dark)] focus:outline-none focus:border-indigo-500/40 transition-all resize-none text-sm"
           />
-
-          {/* Originality */}
-          {hasDrawing && (
-            <div className="rounded-xl px-3 py-2.5 border text-xs font-medium">
-              {isCheckingOriginal ? (
-                <span className="text-[var(--muted)] flex items-center gap-1.5">
-                  <span className="w-3 h-3 border border-indigo-500/40 border-t-indigo-500 rounded-full animate-spin" />
-                  Checking...
-                </span>
-              ) : isOriginal === false ? (
-                <span className="flex items-center gap-1.5" style={{ color: "rgba(239,68,68,0.8)" }}>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Already minted
-                </span>
-              ) : (
-                <span className="flex items-center gap-1.5" style={{ color: "rgba(16,185,129,0.8)" }}>
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Original — ready to mint
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Error */}
           {error && (

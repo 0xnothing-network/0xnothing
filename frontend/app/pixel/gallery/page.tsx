@@ -54,7 +54,7 @@ export default function GalleryPage() {
     }
   }, [isConnected, address, fetchUserTokens]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!selectedToken || !sendAddress) return;
     if (!/^0x[0-9a-fA-F]{40}$/.test(sendAddress)) {
       setTxStatus({ type: "error", message: "Invalid Ethereum address" });
@@ -88,9 +88,9 @@ export default function GalleryPage() {
     } finally {
       setTxPending(false);
     }
-  };
+  }, [selectedToken, sendAddress, address, writeContractAsync, fetchUserTokens]);
 
-  const handleListForSale = async () => {
+  const handleListForSale = useCallback(async () => {
     if (!selectedToken || !listPrice) return;
     setTxStatus({ type: "pending", message: "Listing NFT..." });
     setTxPending(true);
@@ -115,9 +115,9 @@ export default function GalleryPage() {
     } finally {
       setTxPending(false);
     }
-  };
+  }, [selectedToken, listPrice, writeContractAsync, fetchUserTokens]);
 
-  const handleDelist = async (tokenId: bigint) => {
+  const handleDelist = useCallback(async (tokenId: bigint) => {
     setTxStatus({ type: "pending", message: "Removing from marketplace..." });
     setTxPending(true);
     try {
@@ -137,12 +137,12 @@ export default function GalleryPage() {
     } finally {
       setTxPending(false);
     }
-  };
+  }, [writeContractAsync, fetchUserTokens]);
 
-  const openListModal = (nft: NFTItem) => {
+  const openListModal = useCallback((nft: NFTItem) => {
     setSelectedToken(nft);
     setShowListModal(true);
-  };
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">

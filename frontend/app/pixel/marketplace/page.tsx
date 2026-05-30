@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { useAccount, useWriteContract } from "wagmi";
 import { publicClient } from "@/lib/contract";
@@ -43,11 +43,7 @@ export default function MarketplacePage() {
 
   const { writeContractAsync } = useWriteContract();
 
-  useEffect(() => {
-    fetchNFTsForSale();
-  }, []);
-
-  const fetchNFTsForSale = async () => {
+  const fetchNFTsForSale = useCallback(async () => {
     setIsLoading(true);
     try {
       const marketplaceNfts = await getMarketplaceNFTs();
@@ -58,12 +54,18 @@ export default function MarketplacePage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const displayedNfts =
+  useEffect(() => {
+    fetchNFTsForSale();
+  }, [fetchNFTsForSale]);
+
+  const displayedNfts = useMemo(() =>
     gridFilter === "all"
       ? nfts
-      : nfts.filter((n) => Number(n.data?.gridSize) === gridFilter);
+      : nfts.filter((n) => Number(n.data?.gridSize) === gridFilter),
+    [nfts, gridFilter]
+  );
 
   const handleBuy = async (tokenId: bigint, price: bigint) => {
     setTxStatus({ type: "pending", message: "Purchasing NFT..." });
@@ -91,7 +93,7 @@ export default function MarketplacePage() {
     }
   };
 
-  const handleList = async () => {
+  const handleList = useCallback(async () => {
     if (!selectedTokenId || !listingPrice) return;
     setTxStatus({ type: "pending", message: "Updating price..." });
     setTxPending(true);
@@ -116,7 +118,7 @@ export default function MarketplacePage() {
     } finally {
       setTxPending(false);
     }
-  };
+  }, [selectedTokenId, listingPrice, writeContractAsync, fetchNFTsForSale]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -144,7 +146,7 @@ export default function MarketplacePage() {
       {/* Grid Size Filter */}
       <div className="mb-6 flex items-center gap-2 flex-wrap">
         <span className="text-[#64748B] text-sm">GRID:</span>
-        {(["all", 16, 32, 64] as const).map((size) => (
+        {(["all", 8, 16, 32, 64, 128] as const).map((size) => (
           <button
             key={size}
             onClick={() => setGridFilter(size)}
