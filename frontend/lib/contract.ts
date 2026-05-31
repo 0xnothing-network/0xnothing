@@ -53,7 +53,7 @@ async function fetchTokenDataCached(tokenId: bigint): Promise<TokenData | null> 
     const data = await publicClient.readContract({
       address: getContractAddress() as `0x${string}`,
       abi: PixelNFTABI,
-      functionName: "getTokenData",
+      functionName: "tokenData",
       args: [tokenId],
     });
     const result = data as unknown as TokenData;
@@ -70,7 +70,7 @@ export async function getMintedTokens(address: string) {
     const tokens = await publicClient.readContract({
       address: getContractAddress() as `0x${string}`,
       abi: PixelNFTABI,
-      functionName: "getMintedTokens",
+      functionName: "userTokens",
       args: [address as `0x${string}`],
     });
     return (tokens as bigint[]).sort((a, b) => Number(a - b));

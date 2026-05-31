@@ -63,17 +63,11 @@ export default function GalleryPage() {
     setTxStatus({ type: "pending", message: "Sending NFT..." });
     setTxPending(true);
     try {
-      console.log("[DEBUG] transferFrom params:", {
-        from: address,
-        to: sendAddress,
-        tokenId: selectedToken.tokenId.toString(),
-        contractAddress: getContractAddress(),
-      });
       const hash = await writeContractAsync({
         address: getContractAddress() as `0x${string}`,
         abi: PixelNFTABI,
-        functionName: "transferFrom",
-        args: [address as `0x${string}`, sendAddress as `0x${string}`, selectedToken.tokenId],
+        functionName: "transferNFT",
+        args: [sendAddress as `0x${string}`, selectedToken.tokenId],
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setShowSendModal(false);
