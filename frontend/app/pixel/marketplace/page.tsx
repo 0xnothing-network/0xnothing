@@ -193,15 +193,17 @@ export default function MarketplacePage() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-white mb-2">No NFTs for Sale</h2>
-          <p className="text-[#94A3B8] max-w-sm mx-auto">
+          <p className="text-[#94A3B8] max-w-sm mx-auto mb-8">
             Be the first to list your pixel art NFT on the marketplace
           </p>
-          <Link href="/pixel" className="pixel-btn pixel-btn-indigo" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 10 }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            CREATE PIXEL ART
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/pixel" className="pixel-btn pixel-btn-indigo" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 10 }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              CREATE PIXEL ART
+            </Link>
+          </div>
         </div>
       ) : displayedNfts.length === 0 ? (
         <div className="text-center py-20">
@@ -211,7 +213,7 @@ export default function MarketplacePage() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-white mb-2">No {gridFilter}×{gridFilter} NFTs</h2>
-          <p className="text-[#94A3B8] max-w-sm mx-auto">
+          <p className="text-[#94A3B8] max-w-sm mx-auto mb-8">
             No listings found for this grid size. Try another filter.
           </p>
         </div>

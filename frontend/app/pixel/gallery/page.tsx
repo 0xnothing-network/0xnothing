@@ -144,10 +144,23 @@ export default function GalleryPage() {
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2">My Gallery</h1>
-        <p className="text-[#94A3B8]">
-          View and manage your pixel art NFTs
-        </p>
-      </div>
+          <p className="text-[#94A3B8]">
+            View and manage your pixel art NFTs
+          </p>
+          <a
+            href="https://opensea.io/collection/0xpixel-eth"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pixel-btn pixel-btn-secondary text-xs inline-flex items-center gap-2 mt-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
+            VIEW ON OPENSEA
+          </a>
+        </div>
 
       {/* Toast */}
       {txStatus && (
@@ -207,12 +220,27 @@ export default function GalleryPage() {
           <p className="text-[#94A3B8] mb-8 max-w-sm mx-auto">
             Start creating and mint your first pixel art NFT
           </p>
-          <Link href="/pixel" className="pixel-btn pixel-btn-indigo" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 10 }}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            START DRAWING
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/pixel" className="pixel-btn pixel-btn-indigo" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", fontSize: 10 }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              START DRAWING
+            </Link>
+            <a
+              href="https://opensea.io/collection/0xpixel-eth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pixel-btn pixel-btn-secondary text-xs inline-flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              VIEW ON OPENSEA
+            </a>
+          </div>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -231,6 +259,19 @@ export default function GalleryPage() {
                   style={{ imageRendering: "pixelated" }}
                   unoptimized
                 />
+                <a
+                  href={`https://opensea.io/assets/ethereum/0x6F70ac7185133002EC209EE55f83A00A7fC9C7c6/${nft.tokenId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute top-2 right-2 bg-[#1A1A2E]/80 backdrop-blur-sm p-1.5 rounded-lg border border-[#2D2D44] hover:border-indigo-500/50 transition-colors opacity-0 group-hover:opacity-100"
+                  title="View on OpenSea"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366F1" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
                 {nft.isForSale && (
                   <div className="pixel-badge" style={{ background: "rgba(16,185,129,0.15)", color: "#34D399", borderColor: "rgba(16,185,129,0.3)" }}>
                     FOR SALE
