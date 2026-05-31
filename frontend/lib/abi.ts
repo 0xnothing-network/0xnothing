@@ -136,7 +136,7 @@ export const PixelNFTABI = [
       { "name": "pixelData", "type": "string" },
       { "name": "gridSize", "type": "uint256" }
     ],
-    "name": "checkOriginality",
+    "name": "checkOriginal",
     "outputs": [{ "name": "", "type": "bool" }],
     "stateMutability": "view",
     "type": "function"
@@ -146,7 +146,7 @@ export const PixelNFTABI = [
       { "name": "pixelData", "type": "string" },
       { "name": "gridSize", "type": "uint256" }
     ],
-    "name": "getOriginalCreator",
+    "name": "getCreator",
     "outputs": [{ "name": "", "type": "address" }],
     "stateMutability": "view",
     "type": "function"

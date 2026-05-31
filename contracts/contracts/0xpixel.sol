@@ -93,7 +93,7 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
         require(bytes(name).length != 0 && bytes(name).length <= 32, "Invalid name");
         require(bytes(desc).length <= 256, "Desc too long");
         require(grid == 8 || grid == 16 || grid == 32 || grid == 64 || grid == 128, "Invalid grid");
-        require(bytes(px).length != 0 && bytes(px).length <= 50000, "Invalid px");
+        require(bytes(px).length != 0 && bytes(px).length <= 1200000, "Invalid px");
 
         bytes32 h = keccak256(abi.encodePacked(px, grid));
         require(artworkRegistry[h] == 0, "Artwork exists");

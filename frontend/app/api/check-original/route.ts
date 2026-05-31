@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       const result = await client.readContract({
         address: CONTRACT_ADDRESS as `0x${string}`,
         abi: PixelNFTABI,
-        functionName: "checkOriginality",
+        functionName: "checkOriginal",
         args: [pixelData, BigInt(gridSize)],
       });
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
           creator = await client.readContract({
             address: CONTRACT_ADDRESS as `0x${string}`,
             abi: PixelNFTABI,
-            functionName: "getOriginalCreator",
+            functionName: "getCreator",
             args: [pixelData, BigInt(gridSize)],
           });
         } catch {

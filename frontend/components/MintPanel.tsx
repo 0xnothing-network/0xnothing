@@ -152,7 +152,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
   const { data: isOriginal, isLoading: isCheckingOriginal } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
-    functionName: "checkOriginality",
+    functionName: "checkOriginal",
     args: [debouncedBase64, BigInt(gridSize)],
     query: {
       enabled: !!debouncedBase64 && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000",
@@ -162,7 +162,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
   const { data: _originalCreator } = useReadContract({ // eslint-disable-line @typescript-eslint/no-unused-vars
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
-    functionName: "getOriginalCreator",
+    functionName: "getCreator",
     args: [debouncedBase64, BigInt(gridSize)],
     query: {
       enabled: !!debouncedBase64 && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000" && isOriginal === false,
