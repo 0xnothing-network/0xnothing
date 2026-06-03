@@ -314,3 +314,115 @@ input[type="range"]::-webkit-slider-thumb:hover {
 @keyframes pixel-spin {
   to { transform: rotate(360deg); }
 }
+
+/* Mobile menu animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out;
+}
+
+/* Page transition animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-fadeInUp-delay-1 {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out 0.1s forwards;
+}
+
+.animate-fadeInUp-delay-2 {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out 0.2s forwards;
+}
+
+.animate-fadeInUp-delay-3 {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease-out 0.3s forwards;
+}
+
+/* Stagger children */
+.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* NFT Grid Cards Animation */
+.nft-grid {
+  animation: gridFadeIn 0.4s ease-out;
+}
+
+.nft-card {
+  opacity: 0;
+  transform: translateY(15px);
+  animation: cardSlideIn 0.4s ease-out forwards;
+  will-change: transform, opacity;
+}
+
+.nft-card:nth-child(1) { animation-delay: 0.05s; }
+.nft-card:nth-child(2) { animation-delay: 0.1s; }
+.nft-card:nth-child(3) { animation-delay: 0.15s; }
+.nft-card:nth-child(4) { animation-delay: 0.2s; }
+.nft-card:nth-child(5) { animation-delay: 0.25s; }
+.nft-card:nth-child(6) { animation-delay: 0.3s; }
+.nft-card:nth-child(7) { animation-delay: 0.35s; }
+.nft-card:nth-child(8) { animation-delay: 0.4s; }
+.nft-card:nth-child(n+9) { animation-delay: 0.45s; }
+
+@keyframes gridFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Pixel page animations */
+.pixel-hero-anim {
+  opacity: 0;
+  transform: translateY(15px);
+  animation: pixelFadeUp 0.6s ease-out forwards;
+}
+
+.pixel-hero-anim:nth-child(1) { animation-delay: 0.05s; }
+.pixel-hero-anim:nth-child(2) { animation-delay: 0.15s; }
+
+@keyframes pixelFadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

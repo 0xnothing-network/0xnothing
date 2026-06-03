@@ -218,7 +218,7 @@ export default function MarketplacePage() {
           </p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 nft-grid">
           {displayedNfts.map((nft) => {
             const isOwn = address && nft.owner?.toLowerCase() === address.toLowerCase();
             const isBuyingThis = buyingId === nft.tokenId;
@@ -226,7 +226,7 @@ export default function MarketplacePage() {
             return (
               <div
                 key={nft.tokenId.toString()}
-                className="group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
+                className="nft-card group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
               >
                 <div className="relative aspect-square bg-[#0F0F23] flex items-center justify-center overflow-hidden">
                 <Image

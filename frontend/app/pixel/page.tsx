@@ -76,13 +76,13 @@ export default function PixelPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-white/5">
+      <section className="pixel-hero-anim relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.12) 0%, transparent 60%)" }} />
         <div className="max-w-7xl mx-auto px-4 pt-10 pb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight leading-tight">
+          <h1 className="pixel-hero-anim text-4xl md:text-5xl font-bold text-white mb-3 tracking-tight leading-tight">
             Create your <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">pixel masterpiece</span>
           </h1>
-          <p className="text-[var(--muted-light)] text-base md:text-lg max-w-md mx-auto">
+          <p className="pixel-hero-anim text-[var(--muted-light)] text-base md:text-lg max-w-md mx-auto">
             Draw. Mint. Trade on Ethereum.
           </p>
         </div>

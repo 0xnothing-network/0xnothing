@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
@@ -16,13 +16,14 @@ const X_URL = "https://x.com/0xnothing_net";
 export function Header() {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-[#13131F]/90 backdrop-blur-xl border-b border-white/5">
+    <header ref={headerRef} className="sticky top-0 z-50 bg-[#13131F]/90 backdrop-blur-xl border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/pixel" className="flex items-center gap-2 group">
@@ -89,7 +90,7 @@ export function Header() {
 
       {/* Mobile Nav */}
       {mobileMenuOpen && (
-        <nav className="md:hidden border-t border-white/5 px-4 py-3 space-y-0.5">
+        <nav className="md:hidden border-t border-white/5 px-4 py-3 space-y-0.5 animate-slideDown">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}

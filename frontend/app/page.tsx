@@ -58,22 +58,22 @@ export default function LandingPage() {
         {[...Array(40)].map((_, i) => (
           <div
             key={i}
-            className="absolute rounded-full"
+            className="landing-star"
             style={{
               width: Math.random() * 3 + 1 + "px",
               height: Math.random() * 3 + 1 + "px",
               background: "rgba(255,255,255," + (Math.random() * 0.6 + 0.2) + ")",
               left: Math.random() * 100 + "%",
               top: Math.random() * 100 + "%",
-              animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
               animationDelay: Math.random() * 3 + "s",
+              animationDuration: Math.random() * 3 + 2 + "s",
             }}
           />
         ))}
       </div>
 
       {/* Nav */}
-      <header className="relative z-10 px-8 py-6 flex items-center justify-between">
+      <header className="landing-fade-in relative z-10 px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Image
             src="/0xNothing.jpg"
@@ -92,29 +92,27 @@ export default function LandingPage() {
         </button>
       </header>
 
-      {/* Hero */}
+      {/* hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 relative">
 
         {/* Big glow halo behind logo */}
-        <div className="absolute pointer-events-none" style={{
+        <div className="absolute pointer-events-none landing-pulse" style={{
           width: "700px",
           height: "700px",
           background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.06) 40%, transparent 70%)",
           filter: "blur(80px)",
-          animation: "pulseGlow 4s ease-in-out infinite",
         }} />
 
         {/* Solar system orbit container */}
-        <div className="relative mb-10" style={{ width: "420px", height: "420px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="landing-solar-system relative mb-10" style={{ width: "420px", height: "420px", display: "flex", alignItems: "center", justifyContent: "center" }}>
 
           {/* Sun glow */}
-          <div className="absolute pointer-events-none" style={{
+          <div className="absolute pointer-events-none landing-pulse-slow" style={{
             width: "80px",
             height: "80px",
             borderRadius: "50%",
             background: "radial-gradient(circle, rgba(251,191,36,0.9) 0%, rgba(251,146,60,0.6) 40%, rgba(249,115,22,0.2) 70%, transparent 100%)",
             boxShadow: "0 0 60px rgba(251,191,36,0.6), 0 0 120px rgba(251,146,60,0.3)",
-            animation: "pulseGlow 3s ease-in-out infinite",
           }} />
           <div className="absolute pointer-events-none" style={{
             width: "60px",
@@ -208,7 +206,7 @@ export default function LandingPage() {
         </div>
 
         {/* Brand */}
-        <div className="text-center mb-10 space-y-2">
+        <div className="landing-brand text-center mb-10 space-y-2">
           <h1 className="text-white text-5xl md:text-7xl font-bold tracking-tight" style={{
             textShadow: "0 0 40px rgba(99,102,241,0.5)",
           }}>
@@ -220,7 +218,7 @@ export default function LandingPage() {
         {/* CTA */}
         <button
           onClick={() => setExploreOpen(true)}
-          className="group relative flex items-center gap-2.5 px-12 py-5 rounded-2xl text-white font-semibold text-base transition-all duration-200 hover:scale-105"
+          className="landing-cta group relative flex items-center gap-2.5 px-12 py-5 rounded-2xl text-white font-semibold text-base transition-all duration-200 hover:scale-105"
           style={{
             background: "linear-gradient(135deg, #6366F1, #8B5CF6)",
             boxShadow: "0 0 80px rgba(99,102,241,0.4), 0 0 160px rgba(99,102,241,0.15)",
@@ -233,7 +231,7 @@ export default function LandingPage() {
         </button>
 
         {/* Sub links */}
-        <div className="mt-16 flex items-center gap-8">
+        <div className="landing-sublinks mt-16 flex items-center gap-8">
           <a href="https://x.com/0xnothing_net" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#4B5563] hover:text-white text-xs uppercase tracking-wider transition-colors">
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -292,7 +290,7 @@ export default function LandingPage() {
                     );
                   }
                   return (
-                    <Link key={p.id} href={p.href} onClick={() => setExploreOpen(false)} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden">
+                    <Link key={p.id} href={p.href} onClick={() => setExploreOpen(false)} className="group relative bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/10 hover:border-white/20 transition-all overflow-hidden explore-card">
                       <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
                         background: `radial-gradient(ellipse at 30% 50%, ${p.glow} 0%, transparent 70%)`,
                       }} />
@@ -329,14 +327,78 @@ export default function LandingPage() {
 }
 
 const styles = `
+/* Landing page CSS animations - hardware accelerated */
+.landing-star {
+  position: absolute;
+  border-radius: 50%;
+  animation: twinkle ease-in-out infinite;
+  will-change: opacity, transform;
+}
+
+.landing-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.landing-solar-system {
+  opacity: 0;
+  transform: scale(0.8);
+  animation: solarSystemIn 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards;
+  will-change: transform, opacity;
+}
+
+.landing-brand {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeSlideUp 0.6s ease-out 0.6s forwards;
+  will-change: transform, opacity;
+}
+
+.landing-cta {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+  animation: fadeSlideUp 0.6s ease-out 0.9s forwards;
+  will-change: transform, opacity;
+}
+
+.landing-sublinks {
+  opacity: 0;
+  animation: fadeSlideUp 0.6s ease-out 1.1s forwards;
+  will-change: opacity;
+}
+
+.landing-pulse {
+  animation: pulseGlow 4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.landing-pulse-slow {
+  animation: pulseGlow 3s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 @keyframes twinkle {
   0%, 100% { opacity: 0.2; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.5); }
 }
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes solarSystemIn {
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeSlideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes pulseGlow {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.1); }
 }
+
 @keyframes orbit1 {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -356,5 +418,21 @@ const styles = `
 @keyframes tiltPlanet {
   0%, 100% { transform: rotate(-8deg); }
   50% { transform: rotate(8deg); }
+}
+
+/* Explore card modal animation */
+.explore-card {
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  animation: cardIn 0.4s ease-out forwards;
+}
+
+.explore-card:nth-child(1) { animation-delay: 0.05s; }
+.explore-card:nth-child(2) { animation-delay: 0.1s; }
+.explore-card:nth-child(3) { animation-delay: 0.15s; }
+.explore-card:nth-child(4) { animation-delay: 0.2s; }
+
+@keyframes cardIn {
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 `;
