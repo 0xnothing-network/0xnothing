@@ -260,7 +260,7 @@ export default function GalleryPage() {
                   unoptimized
                 />
                 <a
-                  href={`https://opensea.io/assets/ethereum/0x6F70ac7185133002EC209EE55f83A00A7fC9C7c6/${nft.tokenId}`}
+                  href={`https://opensea.io/assets/ethereum/0x7bA34514171c5874a8484a31aF30a2e8D9D60f79/${nft.tokenId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="absolute top-2 right-2 bg-[#1A1A2E]/80 backdrop-blur-sm p-1.5 rounded-lg border border-[#2D2D44] hover:border-indigo-500/50 transition-colors opacity-0 group-hover:opacity-100"

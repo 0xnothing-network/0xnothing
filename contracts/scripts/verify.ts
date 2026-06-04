@@ -1,7 +1,7 @@
 import * as hre from "hardhat";
 
 async function main() {
-  const contractAddress = "0x6F70ac7185133002EC209EE55f83A00A7fC9C7c6";
+  const contractAddress = "0x7bA34514171c5874a8484a31aF30a2e8D9D60f79";
   const adminAddress = "0x58bcC7B40790905a83373c8979B92Ac400000000";
 
   console.log("Verifying contract on Etherscan...");

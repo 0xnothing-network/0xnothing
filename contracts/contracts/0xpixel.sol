@@ -32,11 +32,11 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
     mapping(uint256 => uint256) public userTokenIndex;
     mapping(address => uint256) public pendingWithdrawals;
 
-    event Minted(address indexed, uint256 indexed, string);
-    event Listed(uint256 indexed, uint256);
-    event Delisted(uint256 indexed);
-    event Sold(uint256 indexed, address indexed, address indexed, uint256);
-    event Withdrawn(address indexed, uint256);
+    event Minted(address indexed creator, uint256 indexed tokenId, string name);
+    event Listed(uint256 indexed tokenId, uint256 price);
+    event Delisted(uint256 indexed tokenId);
+    event Sold(uint256 indexed tokenId, address indexed buyer, address indexed seller, uint256 price);
+    event Withdrawn(address indexed user, uint256 amount);
 
     constructor(address payable _devWallet) ERC721("0xPixel", "0xP") {
         require(_devWallet != address(0), "Zero dev wallet");
@@ -64,7 +64,6 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
 
     function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = _ownerOf(tokenId);
-
         if (from != address(0)) {
             uint256 idx = userTokenIndex[tokenId];
             uint256[] storage fromTokens = userTokens[from];
@@ -74,22 +73,21 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
             fromTokens.pop();
             delete userTokenIndex[tokenId];
         }
-
         if (to != address(0)) {
             userTokens[to].push(tokenId);
             userTokenIndex[tokenId] = userTokens[to].length - 1;
         }
-
         if (from != address(0) && isTokenListed[tokenId]) {
             delete tokenData[tokenId].price;
             delete isTokenListed[tokenId];
             _rmListed(tokenId);
         }
-
         return super._update(to, tokenId, auth);
     }
 
-    function mint(string calldata name, string calldata desc, uint256 grid, string calldata px) external nonReentrant returns (uint256) {
+    function mint(string calldata name, string calldata desc, uint256 grid, string calldata px)
+        external nonReentrant returns (uint256)
+    {
         require(bytes(name).length != 0 && bytes(name).length <= 32, "Invalid name");
         require(bytes(desc).length <= 256, "Desc too long");
         require(grid == 8 || grid == 16 || grid == 32 || grid == 64 || grid == 128, "Invalid grid");
@@ -156,6 +154,7 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
         address seller = _ownerOf(id);
         address origCreator = tokenData[id].creator;
         uint256 price = tokenData[id].price;
+
         uint256 devFee = (price * 25) / 1000;
         uint256 sellerAmt = price - devFee;
 
@@ -163,6 +162,7 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
         delete isTokenListed[id];
         _rmListed(id);
         ++tokenData[id].score;
+
         _transfer(seller, msg.sender, id);
 
         if (seller != origCreator) {
@@ -184,22 +184,118 @@ contract ZeroxPixel is ERC721, IERC2981, ReentrancyGuard {
         return tokenData[id].score;
     }
 
+    // ==================== SVG GENERATION (ĐÃ SỬA LỖI + TỐI ƯU GAS) ====================
+
     function tokenURI(uint256 id) public view override returns (string memory) {
         require(_ownerOf(id) != address(0), "Token not exist");
         PixelArt storage art = tokenData[id];
+
+        string memory svg = _generateSVG(art.pixelData, art.gridSize);
+        string memory svgBase64 = Base64.encode(bytes(svg));
+
         string memory scoreStr = Strings.toString(art.score);
         string memory gridStr = Strings.toString(art.gridSize);
         string memory creatorStr = Strings.toHexString(uint160(art.creator), 20);
-        string memory json = string(bytes.concat(
-            '{"name":"', bytes(art.name),
-            '","description":"', bytes(art.description),
-            '","image":"data:image/png;base64,', bytes(art.pixelData),
+
+        string memory json = string(abi.encodePacked(
+            '{"name":"', art.name,
+            '","description":"', art.description,
+            '","image":"data:image/svg+xml;base64,', svgBase64,
             '","attributes":[',
-            '{"trait_type":"Grid Size","value":"', bytes(gridStr), '"}',
-            ',{"trait_type":"Creator","value":"', bytes(creatorStr), '"}',
-            ',{"trait_type":"Score","display_type":"number","value":', bytes(scoreStr), "}]}"
+            '{"trait_type":"Grid Size","value":"', gridStr, '"}',
+            ',{"trait_type":"Creator","value":"', creatorStr, '"}',
+            ',{"trait_type":"Score","display_type":"number","value":', scoreStr, '}'
+            ']}'
         ));
-        return string(bytes.concat("data:application/json;base64,", bytes(Base64.encode(bytes(json)))));
+
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
+    }
+
+    /**
+     * @notice Generate SVG from pixelData format: [x,y]=#RRGGBB [x,y]=#RRGGBB ...
+     */
+    function _generateSVG(string memory pixelData, uint256 gridSize) internal pure returns (string memory) {
+        bytes memory data = bytes(pixelData);
+        uint256 len = data.length;
+
+        bytes memory svg = abi.encodePacked(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="', _toString(gridSize),
+            '" height="', _toString(gridSize),
+            '" viewBox="0 0 ', _toString(gridSize), ' ', _toString(gridSize),
+            '" shape-rendering="crispEdges">'
+        );
+
+        uint256 i = 0;
+
+        while (i < len) {
+            // Tìm dấu '['
+            while (i < len && data[i] != '[') {
+                unchecked { i++; }
+            }
+            if (i >= len) break;
+            unchecked { i++; } // bỏ '['
+
+            // Parse X
+            uint256 x = 0;
+            while (i < len && data[i] != ',') {
+                x = x * 10 + (uint8(data[i]) - 48);
+                unchecked { i++; }
+            }
+            if (i >= len) break;
+            unchecked { i++; } // bỏ ','
+
+            // Parse Y
+            uint256 y = 0;
+            while (i < len && data[i] != ']') {
+                y = y * 10 + (uint8(data[i]) - 48);
+                unchecked { i++; }
+            }
+            if (i >= len) break;
+            unchecked { i += 2; } // bỏ ']=#'
+
+            if (i + 6 >= len) break;
+
+            // Đọc màu (#RRGGBB)
+            bytes memory color = new bytes(7);
+            for (uint256 j = 0; j < 7; j++) {
+                color[j] = data[i + j];
+            }
+            unchecked { i += 7; }
+
+            // Bỏ khoảng trắng (nếu có)
+            if (i < len && data[i] == ' ') {
+                unchecked { i++; }
+            }
+
+            // Thêm <rect>
+            svg = abi.encodePacked(
+                svg,
+                '<rect x="', _toString(x),
+                '" y="', _toString(y),
+                '" width="1" height="1" fill="', string(color), '"/>'
+            );
+        }
+
+        svg = abi.encodePacked(svg, '</svg>');
+        return string(svg);
+    }
+
+    // Gas optimized uint to string
+    function _toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) return "0";
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits--;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
     }
 
     function transferNFT(address to, uint256 id) external nonReentrant {
