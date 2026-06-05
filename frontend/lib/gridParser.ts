@@ -30,8 +30,8 @@ export function pixelDataToPNG(pixelData: string[][], gridSize: number, outputSi
   return canvas.toDataURL("image/png").split(",")[1] ?? "";
 }
 
-/** Convert pixelData 2D array to a compact JSON string matching AIPromptGenerator's input format. */
-export function pixelDataToJSON(pixelData: string[][], gridSize: number): string {
+/** Convert pixelData 2D array to the compact on-chain text format. */
+export function pixelDataToOnchainText(pixelData: string[][], gridSize: number): string {
   const lines: string[] = [];
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
@@ -41,7 +41,12 @@ export function pixelDataToJSON(pixelData: string[][], gridSize: number): string
       }
     }
   }
-  return lines.join("\n");
+  return lines.join(" ");
+}
+
+/** Convert pixelData 2D array to a compact JSON string matching AIPromptGenerator's input format. */
+export function pixelDataToJSON(pixelData: string[][], gridSize: number): string {
+  return pixelDataToOnchainText(pixelData, gridSize).replaceAll(" ", "\n");
 }
 
 /** Parse a compact JSON string back into pixelData 2D array. */

@@ -5,6 +5,7 @@ import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceip
 import { encodeFunctionData } from "viem";
 import { PixelNFTABI } from "@/lib/abi";
 import { PixelButton } from "@/components/PixelButton";
+import { pixelDataToOnchainText, pixelDataToPNG } from "@/lib/gridParser";
 
 interface MintPanelProps {
   pixelData: string[][];
@@ -34,74 +35,41 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
 
   // Refs for debounce
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastPixelDataRef = useRef<string>("");
   const lastCheckedRef = useRef<string>("");
-  const pixelDataRef = useRef(pixelData);
-  pixelDataRef.current = pixelData;
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Generate base64 synchronously for preview (runs on pixelData change, no debounce)
+  // Generate preview PNG synchronously for UI only
   const previewBase64 = useMemo(() => {
-    if (typeof document === "undefined") return "";
     if (!hasDrawing) return "";
+    return pixelDataToPNG(pixelData, gridSize);
+  }, [pixelData, gridSize, hasDrawing]);
 
-    const OUTPUT_SIZE = 512;
-    const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT_SIZE;
-    canvas.height = OUTPUT_SIZE;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "";
-
-    const pixelSize = OUTPUT_SIZE / gridSize;
-    ctx.fillStyle = "#0F0F23";
-    ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
-
-    for (let y = 0; y < gridSize; y++) {
-      for (let x = 0; x < gridSize; x++) {
-        const color = pixelData[y]?.[x] || "transparent";
-        if (color !== "transparent") {
-          ctx.fillStyle = color;
-          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-        }
-      }
-    }
-
-    return canvas.toDataURL("image/png").split(",")[1] ?? "";
+  // Build compact on-chain payload once and reuse it for originality checks + mint
+  const onchainPixelData = useMemo(() => {
+    if (!hasDrawing) return "";
+    return pixelDataToOnchainText(pixelData, gridSize);
   }, [pixelData, gridSize, hasDrawing]);
 
   // Generate stable hash for originality check (debounced)
   const pixelDataHash = useMemo(() => {
     if (!hasDrawing) return "";
-    // Build a compact hash from pixel data - faster than full base64
-    // Only non-transparent pixels matter for uniqueness
-    const coords: string[] = [];
-    for (let y = 0; y < gridSize; y++) {
-      for (let x = 0; x < gridSize; x++) {
-        const color = pixelData[y]?.[x] || "";
-        if (color && color !== "transparent") {
-          // Encode as: x,y,colorLength,first3hexchars
-          const hex = color.replace("#", "");
-          coords.push(`${x},${y},${hex.slice(0, 3)}`);
-        }
-      }
-    }
-    return coords.join("|");
-  }, [pixelData, gridSize, hasDrawing]);
+    return onchainPixelData;
+  }, [onchainPixelData, hasDrawing]);
 
   const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}` | undefined;
 
-  // Debounced base64 for on-chain check
-  const [debouncedBase64, setDebouncedBase64] = useState("");
-  const debouncedBase64Ref = useRef("");
+  // Debounced on-chain payload for originality checks
+  const [debouncedOnchainPixelData, setDebouncedOnchainPixelData] = useState("");
+  const debouncedOnchainPixelDataRef = useRef("");
 
   useEffect(() => {
     if (!hasDrawing || !CONTRACT_ADDRESS || CONTRACT_ADDRESS === "0x0000000000000000000000000000000000000000") {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      setDebouncedBase64("");
-      debouncedBase64Ref.current = "";
+      setDebouncedOnchainPixelData("");
+      debouncedOnchainPixelDataRef.current = "";
       lastCheckedRef.current = "";
       return;
     }
@@ -112,50 +80,25 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
 
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
 
-    debounceTimerRef.current = setTimeout(async () => {
-      // Generate fresh base64 at debounce time
-      const base64 = (() => {
-        const OUTPUT_SIZE = 512;
-        const canvas = document.createElement("canvas");
-        canvas.width = OUTPUT_SIZE;
-        canvas.height = OUTPUT_SIZE;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return "";
-
-        const pixelSize = OUTPUT_SIZE / gridSize;
-        ctx.fillStyle = "#0F0F23";
-        ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
-
-        for (let y = 0; y < gridSize; y++) {
-          for (let x = 0; x < gridSize; x++) {
-            const color = pixelDataRef.current[y]?.[x] || "transparent";
-            if (color !== "transparent") {
-              ctx.fillStyle = color;
-              ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-            }
-          }
-        }
-        return canvas.toDataURL("image/png").split(",")[1] ?? "";
-      })();
-
-      debouncedBase64Ref.current = base64;
+    debounceTimerRef.current = setTimeout(() => {
+      debouncedOnchainPixelDataRef.current = onchainPixelData;
       lastCheckedRef.current = currentHash;
-      setDebouncedBase64(base64);
+      setDebouncedOnchainPixelData(onchainPixelData);
     }, DEBOUNCE_MS);
 
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
-  }, [pixelDataHash, hasDrawing, CONTRACT_ADDRESS, gridSize]);
+  }, [pixelDataHash, hasDrawing, CONTRACT_ADDRESS, onchainPixelData]);
 
-  // Only re-fetch when debouncedBase64 actually changes
+  // Only re-fetch when debounced on-chain payload actually changes
   const { data: isOriginal, isLoading: isCheckingOriginal } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
     functionName: "checkOriginal",
-    args: [debouncedBase64, BigInt(gridSize)],
+    args: [debouncedOnchainPixelData, BigInt(gridSize)],
     query: {
-      enabled: !!debouncedBase64 && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000",
+      enabled: !!debouncedOnchainPixelData && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000",
     },
   });
 
@@ -163,9 +106,9 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     address: CONTRACT_ADDRESS,
     abi: PixelNFTABI,
     functionName: "getCreator",
-    args: [debouncedBase64, BigInt(gridSize)],
+    args: [debouncedOnchainPixelData, BigInt(gridSize)],
     query: {
-      enabled: !!debouncedBase64 && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000" && isOriginal === false,
+      enabled: !!debouncedOnchainPixelData && !!CONTRACT_ADDRESS && CONTRACT_ADDRESS !== "0x0000000000000000000000000000000000000000" && isOriginal === false,
     },
   });
 
@@ -197,29 +140,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     setError(null);
 
     try {
-      // Generate fresh base64 for mint (same logic as preview)
-      const OUTPUT_SIZE = 512;
-      const canvas = document.createElement("canvas");
-      canvas.width = OUTPUT_SIZE;
-      canvas.height = OUTPUT_SIZE;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas not available");
-
-      const pixelSize = OUTPUT_SIZE / gridSize;
-      ctx.fillStyle = "#0F0F23";
-      ctx.fillRect(0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
-
-      for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
-          const color = pixelDataRef.current[y]?.[x] || "transparent";
-          if (color !== "transparent") {
-            ctx.fillStyle = color;
-            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
-          }
-        }
-      }
-
-      const pixelDataBase64ForMint = canvas.toDataURL("image/png").split(",")[1] ?? "";
+      const pixelDataForMint = onchainPixelData;
 
       const CONTRACT_ADDRESS_MINT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
@@ -232,7 +153,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
       const data = encodeFunctionData({
         abi: PixelNFTABI,
         functionName: "mint",
-        args: [name.trim(), description.trim(), BigInt(gridSize), pixelDataBase64ForMint],
+        args: [name.trim(), description.trim(), BigInt(gridSize), pixelDataForMint],
       });
 
       const hash = await sendTransactionAsync({
@@ -254,7 +175,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, address, name, description, hasDrawing, gridSize, sendTransactionAsync]);
+  }, [isConnected, address, name, description, hasDrawing, gridSize, sendTransactionAsync, onchainPixelData]);
 
   const canMint = !isLoading && name.trim() && hasDrawing && isOriginal !== false;
 
