@@ -8,7 +8,6 @@ import { GridSkeleton } from "@/components/Skeleton";
 import { PixelButton } from "@/components/PixelButton";
 import { getMarketplaceNFTs, formatEther, getContractAddress } from "@/lib/contract";
 import { PixelNFTABI } from "@/lib/abi";
-import { parseEther } from "viem";
 import Link from "next/link";
 
 interface TokenData {
@@ -30,13 +29,10 @@ interface NFTItem {
 }
 
 export default function MarketplacePage() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [buyingId, setBuyingId] = useState<bigint | null>(null);
-  const [listingPrice, setListingPrice] = useState("");
-  const [showListingModal, setShowListingModal] = useState(false);
-  const [selectedTokenId, setSelectedTokenId] = useState<bigint | null>(null);
   const [txStatus, setTxStatus] = useState<{ type: "success" | "error" | "pending"; message: string } | null>(null);
   const [txPending, setTxPending] = useState(false);
   const [gridFilter, setGridFilter] = useState<number | "all">("all");
@@ -92,33 +88,6 @@ export default function MarketplacePage() {
       setTxPending(false);
     }
   };
-
-  const handleList = useCallback(async () => {
-    if (!selectedTokenId || !listingPrice) return;
-    setTxStatus({ type: "pending", message: "Updating price..." });
-    setTxPending(true);
-    try {
-      const priceInWei = parseEther(listingPrice);
-      const hash = await writeContractAsync({
-        address: getContractAddress() as `0x${string}`,
-        abi: PixelNFTABI,
-        functionName: "listForSale",
-        args: [selectedTokenId, priceInWei],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      setShowListingModal(false);
-      setSelectedTokenId(null);
-      setListingPrice("");
-      setTxStatus({ type: "success", message: "Price updated successfully!" });
-      fetchNFTsForSale();
-    } catch (err: unknown) {
-      const error = err as { shortMessage?: string; message?: string; details?: string };
-      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
-      setTxStatus({ type: "error", message: msg });
-    } finally {
-      setTxPending(false);
-    }
-  }, [selectedTokenId, listingPrice, writeContractAsync, fetchNFTsForSale]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -220,7 +189,6 @@ export default function MarketplacePage() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 nft-grid">
           {displayedNfts.map((nft) => {
-            const isOwn = address && nft.owner?.toLowerCase() === address.toLowerCase();
             const isBuyingThis = buyingId === nft.tokenId;
 
             return (
@@ -271,18 +239,7 @@ export default function MarketplacePage() {
                       </div>
                     )}
 
-                    {isOwn ? (
-                      <PixelButton
-                        variant="secondary"
-                        onClick={() => {
-                          setSelectedTokenId(nft.tokenId);
-                          setShowListingModal(true);
-                        }}
-                        className="w-full"
-                      >
-                        EDIT PRICE
-                      </PixelButton>
-                    ) : isConnected ? (
+                    {isConnected ? (
                       <PixelButton
                         variant="emerald"
                         onClick={() => handleBuy(nft.tokenId, nft.data?.price || 0n)}
@@ -302,72 +259,6 @@ export default function MarketplacePage() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Listing Modal */}
-      {showListingModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowListingModal(false)}>
-          <div className="bg-[#1A1A2E] rounded-2xl p-6 w-full max-w-md border border-[#2D2D44] shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-bold text-xl">Update Price</h3>
-              <button onClick={() => setShowListingModal(false)} className="w-8 h-8 rounded-lg bg-[#2D2D44] hover:bg-[#3D3D54] flex items-center justify-center text-[#94A3B8] transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-[#94A3B8] text-sm mb-6 leading-relaxed">
-              Set the price for your NFT. A <span className="text-amber-400 font-medium">5% platform fee</span> will be deducted on each sale.
-            </p>
-
-            <div className="space-y-5">
-              <div>
-                <label className="text-white text-sm font-medium mb-2 block">Price (ETH)</label>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  value={listingPrice}
-                  onChange={(e) => setListingPrice(e.target.value)}
-                  placeholder="0.05"
-                  className="w-full px-4 py-3 rounded-xl bg-[#2D2D44] text-white placeholder-[#64748B] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                />
-              </div>
-
-              <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2 border border-[#2D2D44]">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#94A3B8]">You receive</span>
-                  <span className="text-white font-medium">
-                    {listingPrice ? (parseFloat(listingPrice) * 0.95).toFixed(4) : "0"} ETH
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#94A3B8]">Platform fee (5%)</span>
-                  <span className="text-amber-400 font-medium">
-                    {listingPrice ? (parseFloat(listingPrice) * 0.05).toFixed(4) : "0"} ETH
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => { setShowListingModal(false); setSelectedTokenId(null); setListingPrice(""); }}
-                  className="pixel-btn pixel-btn-secondary"
-                >
-                  CANCEL
-                </button>
-                <PixelButton
-                  variant="indigo"
-                  onClick={handleList}
-                  disabled={!listingPrice || txPending}
-                  loading={txPending}
-                >
-                  {txPending ? "UPDATING..." : "UPDATE PRICE"}
-                </PixelButton>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 

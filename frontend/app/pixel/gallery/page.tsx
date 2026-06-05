@@ -9,7 +9,6 @@ import { GridSkeleton } from "@/components/Skeleton";
 import { PixelButton } from "@/components/PixelButton";
 import { getUserNFTs, formatEther, getContractAddress } from "@/lib/contract";
 import { PixelNFTABI } from "@/lib/abi";
-import { parseEther } from "viem";
 
 interface NFTItem {
   tokenId: bigint;
@@ -22,11 +21,6 @@ export default function GalleryPage() {
   const { address, isConnected } = useAccount();
   const [tokens, setTokens] = useState<NFTItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedToken, setSelectedToken] = useState<NFTItem | null>(null);
-  const [showListModal, setShowListModal] = useState(false);
-  const [listPrice, setListPrice] = useState("");
-  const [showSendModal, setShowSendModal] = useState(false);
-  const [sendAddress, setSendAddress] = useState("");
   const [txStatus, setTxStatus] = useState<{ type: "success" | "error" | "pending"; message: string } | null>(null);
   const [txPending, setTxPending] = useState(false);
 
@@ -54,63 +48,6 @@ export default function GalleryPage() {
     }
   }, [isConnected, address, fetchUserTokens]);
 
-  const handleSend = useCallback(async () => {
-    if (!selectedToken || !sendAddress) return;
-    if (!/^0x[0-9a-fA-F]{40}$/.test(sendAddress)) {
-      setTxStatus({ type: "error", message: "Invalid Ethereum address" });
-      return;
-    }
-    setTxStatus({ type: "pending", message: "Sending NFT..." });
-    setTxPending(true);
-    try {
-      const hash = await writeContractAsync({
-        address: getContractAddress() as `0x${string}`,
-        abi: PixelNFTABI,
-        functionName: "transferNFT",
-        args: [sendAddress as `0x${string}`, selectedToken.tokenId],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      setShowSendModal(false);
-      setSendAddress("");
-      setSelectedToken(null);
-      setTxStatus({ type: "success", message: "NFT sent successfully!" });
-      fetchUserTokens();
-    } catch (err: unknown) {
-      const error = err as { shortMessage?: string; message?: string; details?: string };
-      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
-      setTxStatus({ type: "error", message: msg });
-    } finally {
-      setTxPending(false);
-    }
-  }, [selectedToken, sendAddress, address, writeContractAsync, fetchUserTokens]);
-
-  const handleListForSale = useCallback(async () => {
-    if (!selectedToken || !listPrice) return;
-    setTxStatus({ type: "pending", message: "Listing NFT..." });
-    setTxPending(true);
-    try {
-      const priceInWei = parseEther(listPrice);
-      const hash = await writeContractAsync({
-        address: getContractAddress() as `0x${string}`,
-        abi: PixelNFTABI,
-        functionName: "listForSale",
-        args: [selectedToken.tokenId, priceInWei],
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-      setShowListModal(false);
-      setListPrice("");
-      setSelectedToken(null);
-      setTxStatus({ type: "success", message: "NFT listed successfully!" });
-      fetchUserTokens();
-    } catch (err: unknown) {
-      const error = err as { shortMessage?: string; message?: string; details?: string };
-      const msg = error.shortMessage || error.message || error.details || "Transaction failed";
-      setTxStatus({ type: "error", message: msg });
-    } finally {
-      setTxPending(false);
-    }
-  }, [selectedToken, listPrice, writeContractAsync, fetchUserTokens]);
-
   const handleDelist = useCallback(async (tokenId: bigint) => {
     setTxStatus({ type: "pending", message: "Removing from marketplace..." });
     setTxPending(true);
@@ -132,11 +69,6 @@ export default function GalleryPage() {
       setTxPending(false);
     }
   }, [writeContractAsync, fetchUserTokens]);
-
-  const openListModal = useCallback((nft: NFTItem) => {
-    setSelectedToken(nft);
-    setShowListModal(true);
-  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -284,167 +216,27 @@ export default function GalleryPage() {
                     {nft.data.description}
                   </p>
                 )}
-                {nft.isForSale && nft.data?.price && (
-                  <p className="text-emerald-400 font-bold text-sm">
-                    {formatEther(nft.data.price)} ETH
-                  </p>
-                )}
-                <div className="pt-3 border-t border-[#2D2D44] space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <PixelButton
-                      variant="indigo"
-                      size="sm"
-                      onClick={() => openListModal(nft)}
-                    >
-                      {nft.isForSale ? "UPDATE" : "LIST"}
-                    </PixelButton>
-                    <PixelButton
-                      variant="secondary"
-                      size="sm"
-                      loading={txPending}
-                      onClick={() => { setSelectedToken(nft); setShowSendModal(true); }}
-                    >
-                      SEND
-                    </PixelButton>
+                {nft.isForSale && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#94A3B8] text-xs">Price</span>
+                    <span className="text-emerald-400 font-bold text-sm">
+                      {formatEther(nft.data?.price || 0n)} ETH
+                    </span>
                   </div>
-                  {nft.isForSale && (
-                    <PixelButton
-                      variant="red"
-                      size="sm"
-                      loading={txPending}
-                      onClick={() => handleDelist(nft.tokenId)}
-                    >
-                      REMOVE LISTING
-                    </PixelButton>
-                  )}
-                </div>
+                )}
+                {nft.isForSale && (
+                  <PixelButton
+                    variant="red"
+                    size="sm"
+                    loading={txPending}
+                    onClick={() => handleDelist(nft.tokenId)}
+                  >
+                    REMOVE LISTING
+                  </PixelButton>
+                )}
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Send NFT Modal */}
-      {showSendModal && selectedToken && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowSendModal(false)}>
-          <div className="bg-[#1A1A2E] rounded-2xl p-6 w-full max-w-md border border-[#2D2D44] shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-bold text-xl">Send NFT</h3>
-              <button onClick={() => { setShowSendModal(false); setSendAddress(""); setSelectedToken(null); }} className="w-8 h-8 rounded-lg bg-[#2D2D44] hover:bg-[#3D3D54] flex items-center justify-center text-[#94A3B8] transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Preview */}
-            <div className="flex items-center gap-3 p-3 bg-[#0F0F23] rounded-xl border border-[#2D2D44] mb-5">
-              <img src={selectedToken.imageUrl} alt={selectedToken.data?.name || ""} className="w-12 h-12 rounded-lg object-contain" style={{ imageRendering: "pixelated" }} />
-              <div className="min-w-0">
-                <p className="text-white text-sm font-medium truncate">{selectedToken.data?.name || "Untitled"}</p>
-                <p className="text-[#64748B] text-xs font-mono">#{selectedToken.tokenId.toString()}</p>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <div>
-                <label className="text-white text-sm font-medium mb-2 block">Recipient Address</label>
-                <input
-                  type="text"
-                  value={sendAddress}
-                  onChange={(e) => setSendAddress(e.target.value)}
-                  placeholder="0x..."
-                  className="w-full px-4 py-3 rounded-xl bg-[#2D2D44] text-white placeholder-[#64748B] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-mono text-sm"
-                />
-                {sendAddress && !/^0x[0-9a-fA-F]{40}$/.test(sendAddress) && (
-                  <p className="text-red-400 text-xs mt-1.5">Invalid Ethereum address format</p>
-                )}
-              </div>
-
-              <div className="bg-[#0F0F23] rounded-xl p-4 border border-[#2D2D44]">
-                <p className="text-[#94A3B8] text-xs leading-relaxed">
-                  This action is <span className="text-amber-400 font-medium">irreversible</span>. The NFT will be transferred directly to the recipient's wallet.
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <PixelButton variant="secondary" onClick={() => { setShowSendModal(false); setSendAddress(""); setSelectedToken(null); }}>
-                  CANCEL
-                </PixelButton>
-                <PixelButton
-                  variant="indigo"
-                  onClick={handleSend}
-                  disabled={!sendAddress || !/^0x[0-9a-fA-F]{40}$/.test(sendAddress) || txPending}
-                  loading={txPending}
-                >
-                  {txPending ? "SENDING..." : "SEND NFT"}
-                </PixelButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* List for Sale Modal */}
-      {showListModal && selectedToken && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowListModal(false)}>
-          <div className="bg-[#1A1A2E] rounded-2xl p-6 w-full max-w-md border border-[#2D2D44] shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-bold text-xl">List for Sale</h3>
-              <button onClick={() => setShowListModal(false)} className="w-8 h-8 rounded-lg bg-[#2D2D44] hover:bg-[#3D3D54] flex items-center justify-center text-[#94A3B8] transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-[#94A3B8] text-sm mb-6 leading-relaxed">
-              Set a price for your NFT. A <span className="text-amber-400 font-medium">5% platform fee</span> will be deducted on each sale.
-            </p>
-
-            <div className="space-y-5">
-              <div>
-                <label className="text-white text-sm font-medium mb-2 block">Price (ETH)</label>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  value={listPrice}
-                  onChange={(e) => setListPrice(e.target.value)}
-                  placeholder="0.05"
-                  className="w-full px-4 py-3 rounded-xl bg-[#2D2D44] text-white placeholder-[#64748B] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                />
-              </div>
-
-              <div className="bg-[#0F0F23] rounded-xl p-4 space-y-2 border border-[#2D2D44]">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#94A3B8]">You receive</span>
-                  <span className="text-white font-medium">
-                    {listPrice ? (parseFloat(listPrice) * 0.95).toFixed(4) : "0"} ETH
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[#94A3B8]">Platform fee (5%)</span>
-                  <span className="text-amber-400 font-medium">
-                    {listPrice ? (parseFloat(listPrice) * 0.05).toFixed(4) : "0"} ETH
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <PixelButton variant="secondary" onClick={() => { setShowListModal(false); setSelectedToken(null); setListPrice(""); }}>
-                  CANCEL
-                </PixelButton>
-                <PixelButton
-                  variant="emerald"
-                  onClick={handleListForSale}
-                  disabled={!listPrice || txPending}
-                  loading={txPending}
-                >
-                  {txPending ? "LISTING..." : "LIST NOW"}
-                </PixelButton>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
