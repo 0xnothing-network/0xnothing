@@ -82,6 +82,29 @@ export function downloadAsFile(content: string, filename: string, mimeType: stri
   URL.revokeObjectURL(url);
 }
 
+/** Convert on-chain pixelData text back to SVG string. */
+export function pixelDataToSVG(pixelData: string, gridSize: number): string {
+  if (!pixelData) return "";
+  // Check if it's PNG base64 (legacy) or text format
+  if (pixelData.startsWith("iVBOR") || /^[A-Za-z0-9+/=]{20,}$/.test(pixelData)) {
+    return `data:image/png;base64,${pixelData}`;
+  }
+  // Parse text format: [x,y]=#RRGGBB [x,y]=#RRGGBB ...
+  const rects: string[] = [];
+  const re = /\[(\d+),(\d+)\]\s*=\s*(#[0-9A-Fa-f]{6})/g;
+  let match;
+  while ((match = re.exec(pixelData)) !== null) {
+    const x = parseInt(match[1]);
+    const y = parseInt(match[2]);
+    const color = match[3];
+    rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${color}"/>`);
+  }
+  if (rects.length === 0) return "";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${gridSize}" height="${gridSize}" viewBox="0 0 ${gridSize} ${gridSize}" shape-rendering="crispEdges">${rects.join("")}</svg>`;
+  const encoded = btoa(svg);
+  return `data:image/svg+xml;base64,${encoded}`;
+}
+
 /** Download pixelData as a PNG file. */
 export function downloadAsPNG(pixelData: string[][], gridSize: number, filename = "pixel-art.png") {
   const base64 = pixelDataToPNG(pixelData, gridSize);

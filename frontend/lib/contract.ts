@@ -1,6 +1,7 @@
 import { createPublicClient, http } from "viem";
 import { mainnet } from "wagmi/chains";
 import { PixelNFTABI } from "./abi";
+import { pixelDataToSVG } from "./gridParser";
 
 const alchemyUrl = process.env.NEXT_PUBLIC_ALCHEMY_API_URL;
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
@@ -153,7 +154,9 @@ export async function getUserNFTs(address: string) {
     .map((id, i) => ({
       tokenId: id,
       data: datas[i],
-      imageUrl: datas[i]?.pixelData ? `data:image/png;base64,${datas[i]!.pixelData}` : "",
+      imageUrl: datas[i]?.pixelData && datas[i]?.gridSize
+        ? pixelDataToSVG(datas[i]!.pixelData, Number(datas[i]!.gridSize))
+        : "",
       isForSale: datas[i] ? datas[i]!.price > 0n : false,
     }))
     .filter((nft) => nft.data !== null && nft.imageUrl !== "");
@@ -235,8 +238,8 @@ export async function getMarketplaceNFTs() {
     .map((r, i) => ({
       tokenId: tokenIds[i],
       data: r.value,
-      imageUrl: r.value?.pixelData
-        ? `data:image/png;base64,${r.value.pixelData}`
+      imageUrl: r.value?.pixelData && r.value?.gridSize
+        ? pixelDataToSVG(r.value.pixelData, Number(r.value.gridSize))
         : "",
       owner:
         ownerResults[i].status === "fulfilled"

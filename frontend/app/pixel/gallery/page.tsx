@@ -250,14 +250,11 @@ export default function GalleryPage() {
               className="nft-card group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
             >
               <div className="relative aspect-square bg-[#0F0F23] flex items-center justify-center overflow-hidden">
-                <Image
+                <img
                   src={nft.imageUrl}
                   alt={nft.data?.name || "Pixel Art"}
-                  width={512}
-                  height={512}
                   className="w-full h-full object-contain"
                   style={{ imageRendering: "pixelated" }}
-                  unoptimized
                 />
                 <a
                   href={`https://opensea.io/assets/ethereum/0x7bA34514171c5874a8484a31aF30a2e8D9D60f79/${nft.tokenId}`}
@@ -272,11 +269,6 @@ export default function GalleryPage() {
                     <line x1="10" y1="14" x2="21" y2="3" />
                   </svg>
                 </a>
-                {nft.isForSale && (
-                  <div className="pixel-badge" style={{ background: "rgba(16,185,129,0.15)", color: "#34D399", borderColor: "rgba(16,185,129,0.3)" }}>
-                    FOR SALE
-                  </div>
-                )}
               </div>
               <div className="p-4 space-y-2">
                 <h3 className="text-white font-bold text-base truncate">

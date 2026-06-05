@@ -229,14 +229,11 @@ export default function MarketplacePage() {
                 className="nft-card group bg-[#1A1A2E] rounded-2xl overflow-hidden border border-[#2D2D44] hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1"
               >
                 <div className="relative aspect-square bg-[#0F0F23] flex items-center justify-center overflow-hidden">
-                <Image
+                <img
                   src={nft.imageUrl}
                   alt={nft.data?.name || "Pixel Art"}
-                  width={512}
-                  height={512}
                   className="w-full h-full object-contain"
                   style={{ imageRendering: "pixelated" }}
-                  unoptimized
                 />
                 </div>
                 <div className="p-4 space-y-3">
