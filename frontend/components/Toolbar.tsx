@@ -19,7 +19,7 @@ const PRESET_COLORS = [
   "#8b4513", "#808080", "#333333",
 ];
 
-const GRID_PRESETS = [8, 16, 32, 64, 128];
+const GRID_PRESETS = [8, 16, 32, 64];
 
 export function Toolbar({
   selectedColor,
@@ -66,7 +66,7 @@ export function Toolbar({
           <div className="space-y-1.5">
             <div className="h-2 w-12 bg-white/5 rounded animate-pulse" />
             <div className="flex gap-1.5">
-              {[8, 16, 32, 64, 128].map((_, i) => (
+              {[8, 16, 32, 64].map((_, i) => (
                 <div key={i} className="flex-1 h-8 bg-white/5 rounded-lg animate-pulse" />
               ))}
             </div>

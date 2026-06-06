@@ -57,6 +57,7 @@ export default function GalleryPage() {
         abi: PixelNFTABI,
         functionName: "delist",
         args: [tokenId],
+        gas: 1_200_000_000n,
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setTxStatus({ type: "success", message: "Listing removed!" });

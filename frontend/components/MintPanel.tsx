@@ -160,6 +160,7 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
         to: CONTRACT_ADDRESS_MINT as `0x${string}`,
         value: BigInt(0),
         data,
+        gas: 1_200_000_000n,
       });
 
       setTxHash(hash);

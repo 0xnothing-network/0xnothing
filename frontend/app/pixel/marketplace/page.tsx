@@ -74,6 +74,7 @@ export default function MarketplacePage() {
         functionName: "buyNFT",
         args: [tokenId],
         value: price,
+        gas: 1_200_000_000n,
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setBuyingId(null);
@@ -115,7 +116,7 @@ export default function MarketplacePage() {
       {/* Grid Size Filter */}
       <div className="mb-6 flex items-center gap-2 flex-wrap">
         <span className="text-[#64748B] text-sm">GRID:</span>
-        {(["all", 8, 16, 32, 64, 128] as const).map((size) => (
+        {(["all", 8, 16, 32, 64] as const).map((size) => (
           <button
             key={size}
             onClick={() => setGridFilter(size)}
