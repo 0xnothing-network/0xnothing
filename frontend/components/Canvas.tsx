@@ -645,7 +645,7 @@ function ExportMenu({ pixelData, gridSize }: { pixelData: string[][]; gridSize: 
       <button
         onClick={() => setOpen(o => !o)}
         className={`pixel-btn pixel-btn-secondary pixel-btn-sm flex items-center gap-1.5 ${open ? "text-white" : ""}`}
-        style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700 }}
+        style={{ fontFamily: "var(--font-departure)", fontSize: 9, fontWeight: 700 }}
       >
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -671,7 +671,7 @@ function ExportMenu({ pixelData, gridSize }: { pixelData: string[][]; gridSize: 
             onClick={() => { navigator.clipboard.writeText(pixelDataToJSON(pixelData, gridSize)); setOpen(false); }}
             disabled={!hasDrawing}
             className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: hasDrawing ? "var(--muted-light)" : "var(--muted-dark)" }}
+            style={{ fontFamily: "var(--font-departure)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: hasDrawing ? "var(--muted-light)" : "var(--muted-dark)" }}
             onMouseEnter={e => { if (hasDrawing) (e.target as HTMLElement).style.color = "#fff"; }}
             onMouseLeave={e => { if (hasDrawing) (e.target as HTMLElement).style.color = "var(--muted-light)"; }}
           >
@@ -686,7 +686,7 @@ function ExportMenu({ pixelData, gridSize }: { pixelData: string[][]; gridSize: 
             onClick={() => { downloadAsPNG(pixelData, gridSize); setOpen(false); }}
             disabled={!hasDrawing}
             className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: hasDrawing ? "var(--muted-light)" : "var(--muted-dark)" }}
+            style={{ fontFamily: "var(--font-departure)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: hasDrawing ? "var(--muted-light)" : "var(--muted-dark)" }}
             onMouseEnter={e => { if (hasDrawing) (e.target as HTMLElement).style.color = "#fff"; }}
             onMouseLeave={e => { if (hasDrawing) (e.target as HTMLElement).style.color = "var(--muted-light)"; }}
           >
@@ -702,7 +702,7 @@ function ExportMenu({ pixelData, gridSize }: { pixelData: string[][]; gridSize: 
             onClick={() => { downloadAsJSON(pixelData, gridSize); setOpen(false); }}
             disabled={!hasDrawing}
             className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: hasDrawing ? "var(--muted-light)" : "var(--muted-dark)" }}
+            style={{ fontFamily: "var(--font-departure)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: hasDrawing ? "var(--muted-light)" : "var(--muted-dark)" }}
             onMouseEnter={e => { if (hasDrawing) (e.target as HTMLElement).style.color = "#fff"; }}
             onMouseLeave={e => { if (hasDrawing) (e.target as HTMLElement).style.color = "var(--muted-light)"; }}
           >

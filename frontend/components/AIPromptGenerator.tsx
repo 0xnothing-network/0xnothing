@@ -92,7 +92,7 @@ export function AIPromptGenerator({ gridSize, onApplyPixelData }: AIPromptGenera
         onClick={handleParse}
         disabled={!generated.trim()}
         className="w-full mt-2.5"
-        style={{ fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}
+        style={{ fontFamily: "var(--font-departure)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}
       >
         {parsed ? "APPLIED!" : "APPLY TO CANVAS"}
       </PixelButton>

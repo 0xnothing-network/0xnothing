@@ -91,7 +91,7 @@ export default function MarketplacePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8" style={{ fontFamily: "var(--font-departure)" }}>
 
       {/* Page Header */}
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

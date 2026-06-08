@@ -74,7 +74,7 @@ export default function PixelPage() {
   }
 
   return (
-    <div>
+    <div style={{ fontFamily: "var(--font-departure)" }}>
       {/* Hero */}
       <section className="pixel-hero-anim relative overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.12) 0%, transparent 60%)" }} />

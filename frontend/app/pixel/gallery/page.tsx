@@ -72,7 +72,7 @@ export default function GalleryPage() {
   }, [writeContractAsync, fetchUserTokens]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8" style={{ fontFamily: "var(--font-departure)" }}>
 
       {/* Page Header */}
       <div className="mb-8">

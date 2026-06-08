@@ -47,7 +47,7 @@ export function PixelHeader() {
               priority
               className="w-8 h-8 rounded-full object-cover"
             />
-            <span className="text-white font-bold text-base tracking-tight">0xPixel</span>
+              <span className="text-white font-bold text-base tracking-tight" style={{ fontFamily: "var(--font-departure)" }}>0xPixel</span>
           </Link>
             <a
             href={CONTRACT_ADDRESS ? `https://etherscan.io/address/${CONTRACT_ADDRESS}#analytics` : "#"}
@@ -67,6 +67,7 @@ export function PixelHeader() {
               key={link.href}
               href={link.href}
               className="px-4 py-2 rounded-lg text-sm text-[#64748B] hover:text-white hover:bg-white/5 transition-all duration-150"
+              style={{ fontFamily: "var(--font-departure)" }}
             >
               {link.label}
             </Link>
@@ -108,6 +109,7 @@ export function PixelHeader() {
               key={link.href}
               href={link.href}
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm text-[#64748B] hover:text-white hover:bg-white/5 transition-all duration-150"
+              style={{ fontFamily: "var(--font-departure)" }}
             >
               {link.label}
             </Link>
