@@ -52,12 +52,21 @@ export default function GalleryPage() {
     setTxStatus({ type: "pending", message: "Removing from marketplace..." });
     setTxPending(true);
     try {
+      const estimatedGas = await publicClient.estimateContractGas({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "delist",
+        args: [tokenId],
+        account: address,
+      });
+      const gasLimit = (estimatedGas * 150n) / 100n;
+
       const hash = await writeContractAsync({
         address: getContractAddress() as `0x${string}`,
         abi: PixelNFTABI,
         functionName: "delist",
         args: [tokenId],
-        gas: 1_200_000_000n,
+        gas: gasLimit,
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setTxStatus({ type: "success", message: "Listing removed!" });

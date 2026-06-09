@@ -53,26 +53,22 @@ export function AIPromptGenerator({ gridSize, onApplyPixelData }: AIPromptGenera
 
   if (!mounted) {
     return (
-      <div className="bg-[var(--surface)] rounded-2xl p-4 border border-[var(--border)] space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-purple-500/10 animate-pulse" />
-          <div className="h-3 w-28 bg-white/5 rounded animate-pulse" />
-        </div>
-        <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
-        <div className="h-8 bg-white/5 rounded-xl animate-pulse" />
+      <div className="rounded-xl p-4 animate-pulse" style={{ background: "var(--surface)", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="h-6 rounded-lg mb-3" style={{ background: "rgba(255,255,255,0.05)" }} />
+        <div className="h-24 rounded-xl mb-3" style={{ background: "rgba(255,255,255,0.05)" }} />
+        <div className="h-8 rounded-xl" style={{ background: "rgba(255,255,255,0.05)" }} />
       </div>
     );
   }
 
   return (
-    <div className="bg-[var(--surface)] rounded-2xl p-4 border border-[var(--border)]">
+    <div className="rounded-xl p-4" style={{ background: "var(--surface)", border: "1px solid rgba(255,255,255,0.05)" }}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-md bg-purple-500/10 flex items-center justify-center">
-          <svg className="w-3.5 h-3.5 text-purple-400/70" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z" />
-          </svg>
-        </div>
-        <p className="text-[var(--muted)] text-xs">Grid data parser</p>
+        <svg width="18" height="18" fill="none" stroke="var(--primary)" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <path d="M12 6v6l4 2" />
+        </svg>
+        <h3 className="text-white font-semibold text-sm">Grid data parser</h3>
       </div>
 
       <textarea
@@ -84,15 +80,13 @@ export function AIPromptGenerator({ gridSize, onApplyPixelData }: AIPromptGenera
       />
 
       {count > 0 && (
-        <p className="text-[var(--muted-dark)] text-[11px] mt-1.5">{count} pixel{count !== 1 ? "s" : ""} detected</p>
+        <p className="text-[var(--muted-dark)] text-xs mt-2 mb-2">{count} pixel{count !== 1 ? "s" : ""} detected</p>
       )}
 
       <PixelButton
-        variant="secondary"
+        variant={parsed ? "emerald" : "secondary"}
         onClick={handleParse}
-        disabled={!generated.trim()}
-        className="w-full mt-2.5"
-        style={{ fontFamily: "var(--font-departure)", fontSize: 9, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}
+        className="w-full justify-center"
       >
         {parsed ? "APPLIED!" : "APPLY TO CANVAS"}
       </PixelButton>

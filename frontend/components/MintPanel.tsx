@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt, useReadContract } from "wagmi";
+import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt, useReadContract, useEstimateGas } from "wagmi";
 import { encodeFunctionData } from "viem";
+import { publicClient } from "@/lib/contract";
 import { PixelNFTABI } from "@/lib/abi";
 import { PixelButton } from "@/components/PixelButton";
 import { pixelDataToOnchainText, pixelDataToPNG } from "@/lib/gridParser";
@@ -156,11 +157,19 @@ export function MintPanel({ pixelData, gridSize, onMintSuccess }: MintPanelProps
         args: [name.trim(), description.trim(), BigInt(gridSize), pixelDataForMint],
       });
 
+      const estimatedGas = await publicClient.estimateGas({
+        account: address,
+        to: CONTRACT_ADDRESS_MINT as `0x${string}`,
+        data,
+        value: 0n,
+      });
+      const gasLimit = (estimatedGas * 150n) / 100n;
+
       const hash = await sendTransactionAsync({
         to: CONTRACT_ADDRESS_MINT as `0x${string}`,
         value: BigInt(0),
         data,
-        gas: 1_200_000_000n,
+        gas: gasLimit,
       });
 
       setTxHash(hash);

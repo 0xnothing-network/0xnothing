@@ -29,7 +29,7 @@ interface NFTItem {
 }
 
 export default function MarketplacePage() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const [nfts, setNfts] = useState<NFTItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [buyingId, setBuyingId] = useState<bigint | null>(null);
@@ -68,13 +68,23 @@ export default function MarketplacePage() {
     setBuyingId(tokenId);
     setTxPending(true);
     try {
+      const estimatedGas = await publicClient.estimateContractGas({
+        address: getContractAddress() as `0x${string}`,
+        abi: PixelNFTABI,
+        functionName: "buyNFT",
+        args: [tokenId],
+        account: address,
+        value: price,
+      });
+      const gasLimit = (estimatedGas * 150n) / 100n;
+
       const hash = await writeContractAsync({
         address: getContractAddress() as `0x${string}`,
         abi: PixelNFTABI,
         functionName: "buyNFT",
         args: [tokenId],
         value: price,
-        gas: 1_200_000_000n,
+        gas: gasLimit,
       });
       await publicClient.waitForTransactionReceipt({ hash });
       setBuyingId(null);
